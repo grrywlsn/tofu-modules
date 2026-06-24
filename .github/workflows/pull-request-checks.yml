@@ -108,8 +108,8 @@ jobs:
         working-directory: ${{ matrix.module }}
         run: tofu test
 
-  test-modules:
-    name: test-modules
+  all-tests-pass:
+    name: all-tests-pass
     needs: [find-changed-modules, test-module]
     if: ${{ always() && !cancelled() && needs.find-changed-modules.result == 'success' }}
     runs-on: ubuntu-latest
