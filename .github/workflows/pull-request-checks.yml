@@ -49,6 +49,7 @@ jobs:
           dir_names_exclude_current_dir: true
           files_ignore: |
             .github/**
+            .cursor/**
           json: true
           escape_json: false
 
