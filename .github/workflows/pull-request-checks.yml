@@ -37,7 +37,7 @@ jobs:
     outputs:
       modules-json: ${{ steps.filter-modules.outputs.all_changed_files }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -63,7 +63,7 @@ jobs:
         module: ${{ fromJson(needs.find-changed-modules.outputs.modules-json) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
