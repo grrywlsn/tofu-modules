@@ -15,6 +15,10 @@ output "opensearch_cluster_name" {
 }
 
 output "opensearch_internal_address" {
-  description = "Internal endpoints for the OpenSearch cluster"
-  value       = scaleway_opensearch_deployment.deployment.endpoints
+  description = "Internal HTTPS URL for the OpenSearch API"
+  value = (
+    startswith(local.opensearch_private_api_hostname, "https://")
+    ? local.opensearch_private_api_hostname
+    : "https://${local.opensearch_private_api_hostname}"
+  )
 }
