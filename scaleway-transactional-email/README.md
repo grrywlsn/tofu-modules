@@ -1,0 +1,1 @@
+# scaleway-transactional-email

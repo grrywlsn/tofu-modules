@@ -1,0 +1,72 @@
+name: Post-merge version updates
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  find-changed-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules-json: ${{ steps.filter-modules.outputs.all_changed_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed modules
+        id: filter-modules
+        uses: tj-actions/changed-files@v46
+        with:
+          base_sha: ${{ github.event.before }}
+          dir_names: true
+          dir_names_max_depth: 1
+          dir_names_exclude_current_dir: true
+          files_ignore: |
+            .github/**
+          json: true
+          escape_json: false
+
+  update-module-versions:
+    needs: find-changed-modules
+    runs-on: ubuntu-latest
+    if: ${{ needs.find-changed-modules.outputs.modules-json != '[]' }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.find-changed-modules.outputs.modules-json) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git for semantic release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Copy release configuration to module
+        run: cp .releaserc.json ${{ matrix.module }}/.releaserc.json
+
+      - name: Update version with Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v5
+        with:
+          semantic_version: 22
+          working_directory: ${{ matrix.module }}
+          tag_format: ${{ matrix.module }}-v${version}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
+
+      - name: Create GitHub release
+        if: steps.semantic.outputs.new_release_published == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.module }}-v${{ steps.semantic.outputs.new_release_version }}
+          name: ${{ matrix.module }}-v${{ steps.semantic.outputs.new_release_version }}
+          body: ${{ steps.semantic.outputs.new_release_notes }}
+          target_commitish: main
