@@ -2,5 +2,39 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "semanticCommits": "enabled",
+  "semanticCommitScope": "{{packageFileDir}}",
+  "commitMessageTopic": "update {{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "terraform": {
+    "versioning": "semver"
+  },
+  "packageRules": [
+    {
+      "description": "One Renovate PR per module directory for Terraform provider updates",
+      "matchManagers": ["terraform"],
+      "additionalBranchPrefix": "{{packageFileDir}}-",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Patch provider bumps → fix(scope) for patch module releases",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["patch"],
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": "Minor provider bumps → feat(scope) for minor module releases",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["minor"],
+      "semanticCommitType": "feat"
+    },
+    {
+      "description": "Major provider bumps → feat(scope) with breaking footer for major module releases",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["major"],
+      "semanticCommitType": "feat",
+      "commitBody": "BREAKING CHANGE: upgrade {{depName}} from {{currentVersion}} to {{newVersion}}"
+    }
   ]
 }
