@@ -15,7 +15,7 @@ output "opensearch_cluster_name" {
 }
 
 output "opensearch_internal_address" {
-  description = "Internal HTTPS URL for the OpenSearch API (private network endpoint only)"
+  description = "Internal HTTPS URL for the OpenSearch API (only when enable_private_endpoint is true)"
   value       = local.opensearch_internal_address
 }
 

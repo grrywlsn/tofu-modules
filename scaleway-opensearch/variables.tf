@@ -19,14 +19,20 @@ variable "opensearch_cluster_name" {
   type        = string
 }
 
+variable "enable_private_endpoint" {
+  description = "When true (default), expose the cluster on a private network endpoint."
+  type        = bool
+  default     = true
+}
+
 variable "enable_public_endpoint" {
-  description = "When true, expose the cluster on a public endpoint. When false (default), only a private network endpoint is created."
+  description = "When true, expose the cluster on a public endpoint. Cannot be enabled together with enable_private_endpoint."
   type        = bool
   default     = false
 }
 
 variable "private_network_id" {
-  description = "Private network ID for internal OpenSearch API access. Required when enable_public_endpoint is false."
+  description = "Private network ID for internal OpenSearch API access. Required when enable_private_endpoint is true."
   type        = string
   default     = null
   nullable    = true
