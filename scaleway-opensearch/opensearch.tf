@@ -7,15 +7,6 @@ resource "random_password" "cluster_password" {
   override_special = "!"
 }
 
-locals {
-  opensearch_private_api_hostname = one(flatten([
-    for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
-      for service in endpoint.services : service.url
-      if !endpoint.public && service.name == "api"
-    ]
-  ]))
-}
-
 resource "scaleway_opensearch_deployment" "deployment" {
   name        = var.opensearch_cluster_name
   region      = var.scaleway_region
@@ -30,4 +21,13 @@ resource "scaleway_opensearch_deployment" "deployment" {
     type       = var.opensearch_volume_type
     size_in_gb = var.opensearch_volume_size_in_gb
   }
+}
+
+locals {
+  opensearch_private_api_urls = flatten([
+    for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
+      for service in try(endpoint.services, []) : service.url
+      if try(endpoint.private_network_id, "") != "" && service.name == "api"
+    ]
+  ])
 }
