@@ -19,9 +19,17 @@ variable "opensearch_cluster_name" {
   type        = string
 }
 
+variable "enable_public_endpoint" {
+  description = "When true, expose the cluster on a public endpoint. When false (default), only a private network endpoint is created."
+  type        = bool
+  default     = false
+}
+
 variable "private_network_id" {
-  description = "Private network ID for internal OpenSearch API access. Required so the Scaleway provider exposes the private endpoint in deployment.endpoints."
+  description = "Private network ID for internal OpenSearch API access. Required when enable_public_endpoint is false."
   type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "opensearch_version" {

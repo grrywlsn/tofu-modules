@@ -17,8 +17,11 @@ resource "scaleway_opensearch_deployment" "deployment" {
   user_name   = var.opensearch_user_name
   password    = random_password.cluster_password.result
 
-  private_network {
-    private_network_id = var.private_network_id
+  dynamic "private_network" {
+    for_each = var.enable_public_endpoint ? [] : [var.private_network_id]
+    content {
+      private_network_id = private_network.value
+    }
   }
 
   volume {
@@ -28,26 +31,32 @@ resource "scaleway_opensearch_deployment" "deployment" {
 }
 
 locals {
-  # With private_network configured, the provider filters deployment.endpoints to the
-  # private endpoint only. Pick the API service URL from that endpoint.
-  # https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/opensearch_deployment#attributes-reference
-  opensearch_private_api_urls = flatten([
+  opensearch_api_urls = flatten([
     for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
       for service in endpoint.services : service.url
       if contains(["api", "opensearch"], service.name)
     ]
   ])
 
-  opensearch_internal_address = length(local.opensearch_private_api_urls) > 0 ? (
-    startswith(local.opensearch_private_api_urls[0], "http")
-    ? local.opensearch_private_api_urls[0]
-    : "https://${local.opensearch_private_api_urls[0]}"
-  ) : null
+  opensearch_formatted_api_urls = [
+    for url in local.opensearch_api_urls :
+    startswith(url, "http") ? url : "https://${url}"
+  ]
+
+  opensearch_internal_address = var.enable_public_endpoint ? null : try(local.opensearch_formatted_api_urls[0], null)
+  opensearch_public_api_address = var.enable_public_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
 }
 
-check "opensearch_private_api_endpoint" {
+check "private_network_id_required" {
   assert {
-    condition     = length(local.opensearch_private_api_urls) > 0
-    error_message = "No private OpenSearch API endpoint found. Ensure private_network_id is set and matches the deployment: ${jsonencode(scaleway_opensearch_deployment.deployment.endpoints)}"
+    condition     = var.enable_public_endpoint || var.private_network_id != null
+    error_message = "private_network_id must be set when enable_public_endpoint is false."
+  }
+}
+
+check "opensearch_api_endpoint" {
+  assert {
+    condition     = length(local.opensearch_api_urls) > 0
+    error_message = "No OpenSearch API endpoint found: ${jsonencode(scaleway_opensearch_deployment.deployment.endpoints)}"
   }
 }
