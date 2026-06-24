@@ -7,6 +7,15 @@ resource "random_password" "cluster_password" {
   override_special = "!"
 }
 
+locals {
+  opensearch_private_api_hostname = one(flatten([
+    for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
+      for service in endpoint.services : service.url
+      if !endpoint.public && service.name == "api"
+    ]
+  ]))
+}
+
 resource "scaleway_opensearch_deployment" "deployment" {
   name        = var.opensearch_cluster_name
   region      = var.scaleway_region
