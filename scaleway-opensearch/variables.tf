@@ -19,6 +19,11 @@ variable "opensearch_cluster_name" {
   type        = string
 }
 
+variable "private_network_id" {
+  description = "Private network ID for internal OpenSearch API access. Required so the Scaleway provider exposes the private endpoint in deployment.endpoints."
+  type        = string
+}
+
 variable "opensearch_version" {
   description = "Version of OpenSearch to deploy"
   type        = string

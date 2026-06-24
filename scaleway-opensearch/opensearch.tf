@@ -17,6 +17,10 @@ resource "scaleway_opensearch_deployment" "deployment" {
   user_name   = var.opensearch_user_name
   password    = random_password.cluster_password.result
 
+  private_network {
+    private_network_id = var.private_network_id
+  }
+
   volume {
     type       = var.opensearch_volume_type
     size_in_gb = var.opensearch_volume_size_in_gb
@@ -24,14 +28,13 @@ resource "scaleway_opensearch_deployment" "deployment" {
 }
 
 locals {
+  # With private_network configured, the provider filters deployment.endpoints to the
+  # private endpoint only. Pick the API service URL from that endpoint.
   # https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/opensearch_deployment#attributes-reference
   opensearch_private_api_urls = flatten([
     for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
       for service in endpoint.services : service.url
-      if(
-        (try(endpoint.private_network_id, "") != "" || try(endpoint.public, true) == false) &&
-        contains(["api", "opensearch"], service.name)
-      )
+      if contains(["api", "opensearch"], service.name)
     ]
   ])
 
@@ -45,6 +48,6 @@ locals {
 check "opensearch_private_api_endpoint" {
   assert {
     condition     = length(local.opensearch_private_api_urls) > 0
-    error_message = "No private OpenSearch API endpoint found in deployment.endpoints: ${jsonencode(scaleway_opensearch_deployment.deployment.endpoints)}"
+    error_message = "No private OpenSearch API endpoint found. Ensure private_network_id is set and matches the deployment: ${jsonencode(scaleway_opensearch_deployment.deployment.endpoints)}"
   }
 }
