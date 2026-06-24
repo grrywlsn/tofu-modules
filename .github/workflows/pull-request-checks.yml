@@ -1,0 +1,109 @@
+name: Pre-merge checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  semantic-pull-request:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Check PR title format
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          ignoreLabels: |
+            dependencies
+
+  find-changed-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules-json: ${{ steps.filter-modules.outputs.all_changed_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed modules
+        id: filter-modules
+        uses: tj-actions/changed-files@v46
+        with:
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          dir_names: true
+          dir_names_max_depth: 1
+          dir_names_exclude_current_dir: true
+          files_ignore: |
+            .github/**
+          json: true
+          escape_json: false
+
+  test-modules:
+    needs: find-changed-modules
+    runs-on: ubuntu-latest
+    if: ${{ needs.find-changed-modules.outputs.modules-json != '[]' }}
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.find-changed-modules.outputs.modules-json) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.9.0
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.55.1
+
+      - name: Install terraform-docs
+        run: |
+          curl -sSLo /tmp/terraform-docs.tar.gz \
+            https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-$(uname)-amd64.tar.gz
+          tar -xzf /tmp/terraform-docs.tar.gz -C /tmp
+          sudo mv /tmp/terraform-docs /usr/local/bin/terraform-docs
+
+      - name: Terraform Format Check
+        working-directory: ${{ matrix.module }}
+        run: tofu fmt -recursive -check -diff .
+
+      - name: TFLint
+        working-directory: ${{ matrix.module }}
+        run: |
+          tflint --init
+          tflint
+
+      - name: Update Documentation
+        working-directory: ${{ matrix.module }}
+        run: terraform-docs markdown table --output-file README.md --output-mode inject .
+
+      - name: OpenTofu Validate
+        working-directory: ${{ matrix.module }}
+        run: |
+          tofu init -backend=false
+          tofu validate
+
+      - name: OpenTofu Test
+        working-directory: ${{ matrix.module }}
+        run: tofu test
