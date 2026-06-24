@@ -41,7 +41,7 @@ jobs:
 
       - name: Get changed modules
         id: filter-modules
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           base_sha: ${{ github.event.pull_request.base.sha }}
           dir_names: true
