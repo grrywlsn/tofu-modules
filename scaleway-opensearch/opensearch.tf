@@ -24,35 +24,19 @@ resource "scaleway_opensearch_deployment" "deployment" {
 }
 
 locals {
-  deployment_endpoints = tolist(try(scaleway_opensearch_deployment.deployment.endpoints, []))
-
-  opensearch_private_api_urls = distinct(coalescelist(
-    flatten([
-      for endpoint in local.deployment_endpoints : [
-        for service in try(endpoint.services, []) : service.url
-        if try(service.name, "") == "api" && endswith(try(service.url, ""), ".internal")
-      ]
-    ]),
-    flatten([
-      for endpoint in local.deployment_endpoints : [
-        for service in try(endpoint.services, []) : service.url
-        if try(endpoint.private_network_id, "") != "" && try(service.name, "") == "api"
-      ]
-    ]),
-    flatten([
-      for endpoint in local.deployment_endpoints : [
-        for service in try(endpoint.services, []) : service.url
-        if try(endpoint.public, true) == false && try(service.name, "") == "api"
-      ]
-    ]),
-    try(
-      regexall("([0-9a-f-]+(?:-[0-9a-f-]+)+\\.[0-9a-f-]+(?:-[0-9a-f-]+)+\\.internal)", jsonencode(local.deployment_endpoints)),
-      []
-    )
-  ))
+  # https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/opensearch_deployment#attributes-reference
+  opensearch_private_api_urls = flatten([
+    for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
+      for service in endpoint.services : service.url
+      if(
+        (try(endpoint.private_network_id, "") != "" || try(endpoint.public, true) == false) &&
+        contains(["api", "opensearch"], service.name)
+      )
+    ]
+  ])
 
   opensearch_internal_address = length(local.opensearch_private_api_urls) > 0 ? (
-    startswith(local.opensearch_private_api_urls[0], "https://")
+    startswith(local.opensearch_private_api_urls[0], "http")
     ? local.opensearch_private_api_urls[0]
     : "https://${local.opensearch_private_api_urls[0]}"
   ) : null
@@ -61,6 +45,6 @@ locals {
 check "opensearch_private_api_endpoint" {
   assert {
     condition     = length(local.opensearch_private_api_urls) > 0
-    error_message = "No private OpenSearch API endpoint found in deployment endpoints: ${jsonencode(local.deployment_endpoints)}"
+    error_message = "No private OpenSearch API endpoint found in deployment.endpoints: ${jsonencode(scaleway_opensearch_deployment.deployment.endpoints)}"
   }
 }
