@@ -18,7 +18,7 @@ terraform {
     }
     scaleway = {
       source  = "scaleway/scaleway"
-      version = ">= 2.24"
+      version = "2.24.0"
     }
     tls = {
       source  = "hashicorp/tls"

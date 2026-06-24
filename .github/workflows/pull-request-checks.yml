@@ -28,9 +28,7 @@ jobs:
             ci
             chore
             revert
-          requireScope: false
-          ignoreLabels: |
-            dependencies
+          requireScope: true
 
   find-changed-modules:
     runs-on: ubuntu-latest
