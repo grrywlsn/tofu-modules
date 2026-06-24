@@ -18,7 +18,7 @@ resource "scaleway_opensearch_deployment" "deployment" {
   password    = random_password.cluster_password.result
 
   dynamic "private_network" {
-    for_each = var.enable_public_endpoint ? [] : [var.private_network_id]
+    for_each = var.enable_private_endpoint ? [var.private_network_id] : []
     content {
       private_network_id = private_network.value
     }
@@ -43,14 +43,28 @@ locals {
     startswith(url, "http") ? url : "https://${url}"
   ]
 
-  opensearch_internal_address = var.enable_public_endpoint ? null : try(local.opensearch_formatted_api_urls[0], null)
-  opensearch_public_api_address = var.enable_public_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
+  opensearch_internal_address    = var.enable_private_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
+  opensearch_public_api_address  = var.enable_public_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
+}
+
+check "endpoint_mode_required" {
+  assert {
+    condition     = var.enable_private_endpoint || var.enable_public_endpoint
+    error_message = "At least one of enable_private_endpoint or enable_public_endpoint must be true."
+  }
+}
+
+check "endpoint_mode_exclusive" {
+  assert {
+    condition     = var.enable_private_endpoint != var.enable_public_endpoint
+    error_message = "enable_private_endpoint and enable_public_endpoint cannot both be true: the Scaleway provider creates either a private or public endpoint, not both."
+  }
 }
 
 check "private_network_id_required" {
   assert {
-    condition     = var.enable_public_endpoint || var.private_network_id != null
-    error_message = "private_network_id must be set when enable_public_endpoint is false."
+    condition     = !var.enable_private_endpoint || var.private_network_id != null
+    error_message = "private_network_id must be set when enable_private_endpoint is true."
   }
 }
 
