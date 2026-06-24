@@ -29,6 +29,16 @@ variable "enable_public_endpoint" {
   description = "When true, expose the cluster on a public endpoint. Cannot be enabled together with enable_private_endpoint."
   type        = bool
   default     = false
+
+  validation {
+    condition     = var.enable_private_endpoint || var.enable_public_endpoint
+    error_message = "At least one of enable_private_endpoint or enable_public_endpoint must be true."
+  }
+
+  validation {
+    condition     = var.enable_private_endpoint != var.enable_public_endpoint
+    error_message = "enable_private_endpoint and enable_public_endpoint cannot both be true: the Scaleway provider creates either a private or public endpoint, not both."
+  }
 }
 
 variable "private_network_id" {
@@ -36,6 +46,11 @@ variable "private_network_id" {
   type        = string
   default     = null
   nullable    = true
+
+  validation {
+    condition     = !var.enable_private_endpoint || var.private_network_id != null
+    error_message = "private_network_id must be set when enable_private_endpoint is true."
+  }
 }
 
 variable "opensearch_version" {
