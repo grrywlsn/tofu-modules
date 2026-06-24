@@ -54,7 +54,7 @@ jobs:
           json: true
           escape_json: false
 
-  test-modules:
+  test-module:
     needs: find-changed-modules
     runs-on: ubuntu-latest
     if: ${{ needs.find-changed-modules.outputs.modules-json != '[]' }}
@@ -107,3 +107,31 @@ jobs:
       - name: OpenTofu Test
         working-directory: ${{ matrix.module }}
         run: tofu test
+
+  test-modules:
+    name: test-modules
+    needs: [find-changed-modules, test-module]
+    if: ${{ always() && !cancelled() && needs.find-changed-modules.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify module test results
+        run: |
+          modules='${{ needs.find-changed-modules.outputs.modules-json }}'
+          if [ "$modules" = "[]" ]; then
+            echo "No module directories changed; module tests not required."
+            exit 0
+          fi
+
+          case "${{ needs.test-module.result }}" in
+            success)
+              echo "All changed modules passed checks."
+              ;;
+            skipped)
+              echo "Module tests were skipped unexpectedly."
+              exit 1
+              ;;
+            *)
+              echo "One or more module test jobs failed."
+              exit 1
+              ;;
+          esac
