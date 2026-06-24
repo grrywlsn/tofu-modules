@@ -1,6 +1,9 @@
 # Local .terraform directories
 .terraform/
 
+# Local provider lock files from ad-hoc tofu init
+**/.terraform.lock.hcl
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
