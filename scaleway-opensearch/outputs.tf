@@ -15,11 +15,16 @@ output "opensearch_cluster_name" {
 }
 
 output "opensearch_internal_address" {
-  description = "Internal HTTPS URL for the OpenSearch API"
+  description = "Internal HTTPS URL for the OpenSearch API (private network endpoint only)"
   value       = local.opensearch_internal_address
 }
 
+output "opensearch_public_api_address" {
+  description = "Public HTTPS URL for the OpenSearch API (only when enable_public_endpoint is true)"
+  value       = local.opensearch_public_api_address
+}
+
 output "opensearch_public_dashboard_url" {
-  description = "Public URL for OpenSearch Dashboards when exposed on a public endpoint"
+  description = "Public URL for OpenSearch Dashboards when a public endpoint exists"
   value       = scaleway_opensearch_deployment.deployment.public_dashboard_url
 }
