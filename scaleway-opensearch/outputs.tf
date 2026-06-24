@@ -16,9 +16,5 @@ output "opensearch_cluster_name" {
 
 output "opensearch_internal_address" {
   description = "Internal HTTPS URL for the OpenSearch API"
-  value = (
-    startswith(local.opensearch_private_api_urls[0], "https://")
-    ? local.opensearch_private_api_urls[0]
-    : "https://${local.opensearch_private_api_urls[0]}"
-  )
+  value       = local.opensearch_internal_address
 }
