@@ -26,7 +26,7 @@ docker run --rm \
   -e "SIMULATE_MAIN=${SIMULATE_MAIN}" \
   -e "SOURCE_BRANCH=${SOURCE_BRANCH}" \
   -e "GITHUB_TOKEN=${GITHUB_TOKEN:-dry-run-token}" \
-  node:22-bookworm \
+  node:24-bookworm \
   bash -ec '
     set -euo pipefail
     cp -a /src /repo
@@ -47,7 +47,8 @@ docker run --rm \
       semantic-release@22 \
       semantic-release-monorepo@8.0.2 \
       @semantic-release/commit-analyzer \
-      @semantic-release/release-notes-generator
+      @semantic-release/release-notes-generator \
+      @semantic-release/github@10.3.5
 
     cp ../.releaserc.json .releaserc.json
 
