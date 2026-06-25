@@ -76,6 +76,90 @@ jobs:
           done
           echo "modules-json=$filtered" >> "$GITHUB_OUTPUT"
 
+  preview-release:
+    needs: find-changed-releasable-modules
+    runs-on: ubuntu-latest
+    if: ${{ needs.find-changed-releasable-modules.outputs.modules-json != '[]' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.find-changed-releasable-modules.outputs.modules-json) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Simulate merge to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${{ github.event.pull_request.base.sha }}"
+          git checkout -B main "${{ github.event.pull_request.base.sha }}"
+          git merge --no-edit "${{ github.event.pull_request.head.sha }}"
+
+      - name: Preview semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: push
+          GITHUB_REF: refs/heads/main
+          GITHUB_REF_NAME: main
+        run: |
+          bash scripts/preview-semantic-release.sh \
+            "${{ matrix.module }}" \
+            "preview-${{ matrix.module }}.json"
+
+      - name: Upload preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-${{ matrix.module }}
+          path: preview-${{ matrix.module }}.json
+          retention-days: 1
+
+  comment-release-preview:
+    needs: [find-changed-releasable-modules, preview-release]
+    if: ${{ always() && !cancelled() && needs.find-changed-releasable-modules.outputs.modules-json != '[]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: preview-*
+          merge-multiple: true
+          path: previews
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Build comment body
+        id: comment
+        run: |
+          body="$(node scripts/build-release-preview-comment.mjs previews)"
+          delimiter="release_preview_$(openssl rand -hex 8)"
+          {
+            echo "body<<${delimiter}"
+            echo "${body}"
+            echo "${delimiter}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.comment.outputs.body }}
+          edit-mode: replace
+          body-includes: "<!-- release-preview -->"
+
   test-module:
     needs: find-changed-releasable-modules
     runs-on: ubuntu-latest
