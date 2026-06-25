@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copy shared semantic-release config and install the local PR-title plugin.
-# Run from <module>/ after the core semantic-release packages are installed.
+# Install semantic-release dependencies and the local PR-title plugin in a module
+# directory, then copy .releaserc.json.
 set -euo pipefail
 
 MODULE_DIR="$(pwd)"
@@ -11,5 +11,12 @@ if [[ "${MODULE_DIR}" == "${REPO_ROOT}" ]]; then
   exit 1
 fi
 
+npm install --no-save \
+  semantic-release@22 \
+  semantic-release-monorepo@8.0.2 \
+  @semantic-release/commit-analyzer \
+  @semantic-release/release-notes-generator \
+  @semantic-release/github@10.3.5 \
+  "file:${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer"
+
 cp "${REPO_ROOT}/.releaserc.json" "${MODULE_DIR}/.releaserc.json"
-npm install --no-save "file:${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer"
