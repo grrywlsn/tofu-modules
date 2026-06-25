@@ -65,7 +65,7 @@ variable "opensearch_node_type" {
   default     = "SEARCHDB-SHARED-2C-8G"
 }
 
-variable "opensearch_node_amount" {
+variable "opensearch_node_count" {
   description = "Number of nodes in the OpenSearch cluster"
   type        = number
   default     = 1
