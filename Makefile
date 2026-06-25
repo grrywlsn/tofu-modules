@@ -1,6 +1,6 @@
 SHELL := bash
 
-MODULES := $(dir $(wildcard */main.tf))
+MODULES := $(dir $(wildcard */versions.tf))
 
 .DEFAULT: build
 

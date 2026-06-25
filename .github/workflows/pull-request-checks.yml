@@ -64,13 +64,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Keep only directories with main.tf
+      - name: Keep only directories with versions.tf
         id: releasable-modules
         run: |
           modules='${{ needs.find-changed-modules.outputs.modules-json }}'
           filtered='[]'
           for dir in $(echo "$modules" | jq -r '.[]'); do
-            if [ -f "${dir}/main.tf" ]; then
+            if [ -f "${dir}/versions.tf" ]; then
               filtered=$(echo "$filtered" | jq -c --arg d "$dir" '. + [$d]')
             fi
           done
