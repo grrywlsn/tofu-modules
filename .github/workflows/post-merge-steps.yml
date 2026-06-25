@@ -32,12 +32,16 @@ jobs:
     needs: find-changed-modules
     runs-on: ubuntu-latest
     if: ${{ needs.find-changed-modules.outputs.modules-json != '[]' }}
+    concurrency:
+      group: semantic-release-${{ github.repository }}
+      cancel-in-progress: false
     permissions:
       contents: write
     strategy:
       matrix:
         module: ${{ fromJson(needs.find-changed-modules.outputs.modules-json) }}
       fail-fast: false
+      max-parallel: 1
     steps:
       - uses: actions/checkout@v7
         with:
@@ -59,6 +63,8 @@ jobs:
           semantic_version: 22
           working_directory: ${{ matrix.module }}
           tag_format: ${{ matrix.module }}-v${version}
+          extra_plugins: |
+            semantic-release-monorepo@8.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
