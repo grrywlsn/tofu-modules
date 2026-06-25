@@ -1,6 +1,6 @@
 
 ############################
-#### Scaleway variables ####
+#### Scaleway variables ####
 
 variable "scaleway_region" {
   description = "Scaleway region ID"
