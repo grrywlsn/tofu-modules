@@ -12,7 +12,7 @@ resource "scaleway_opensearch_deployment" "deployment" {
   region      = var.scaleway_region
   project_id  = var.scaleway_project_id
   version     = var.opensearch_version
-  node_amount = var.opensearch_node_amount
+  node_count = var.opensearch_node_count
   node_type   = var.opensearch_node_type
   user_name   = var.opensearch_user_name
   password    = random_password.cluster_password.result
