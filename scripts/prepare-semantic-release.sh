@@ -12,5 +12,5 @@ if [[ "${MODULE_DIR}" == "${REPO_ROOT}" ]]; then
 fi
 
 cp "${REPO_ROOT}/.releaserc.json" "${MODULE_DIR}/.releaserc.json"
-cp "${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer.mjs" \
-  "${MODULE_DIR}/semantic-release-pr-title-analyzer.mjs"
+cp "${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer.cjs" \
+  "${MODULE_DIR}/semantic-release-pr-title-analyzer.cjs"
