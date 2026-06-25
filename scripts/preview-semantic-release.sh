@@ -19,7 +19,6 @@ if [[ ! -f "${REPO_ROOT}/${MODULE}/versions.tf" ]]; then
 fi
 
 cd "${REPO_ROOT}/${MODULE}"
-cp ../.releaserc.json .releaserc.json
 
 npm install --no-save \
   semantic-release@22 \
@@ -27,6 +26,8 @@ npm install --no-save \
   @semantic-release/commit-analyzer \
   @semantic-release/release-notes-generator \
   @semantic-release/github@10.3.5
+
+bash "${REPO_ROOT}/scripts/prepare-semantic-release.sh"
 
 export SEMANTIC_RELEASE_PACKAGE="${MODULE}"
 
