@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Get changed modules
         id: filter-modules
@@ -59,6 +60,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          fetch-tags: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v6
