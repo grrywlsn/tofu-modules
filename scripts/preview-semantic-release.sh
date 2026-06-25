@@ -35,11 +35,16 @@ REPO_URL="https://github.com/${GITHUB_REPOSITORY:-grrywlsn/tofu-modules}.git"
 LOG_FILE="$(mktemp)"
 trap 'rm -f "${LOG_FILE}"' EXIT
 
-# GITHUB_EVENT_NAME cannot be overridden in GitHub Actions, so semantic-release
-# always sees pull_request. --ci false skips that short-circuit while still using
-# GITHUB_TOKEN for git authentication when GITHUB_ACTION is set.
+# GitHub Actions cannot override GITHUB_EVENT_NAME / GITHUB_REF for child
+# processes. Run semantic-release outside the pull_request CI context while
+# keeping credentials for git push dry-run verification.
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+fi
+
 set +e
-npx semantic-release --dry-run --ci false \
+env -u GITHUB_ACTIONS -u GITHUB_EVENT_NAME -u GITHUB_EVENT_PATH -u GITHUB_REF -u GITHUB_REF_NAME -u GITHUB_HEAD_REF -u GITHUB_BASE_REF \
+  npx semantic-release --dry-run --ci false \
   --branches main \
   -r "${REPO_URL}" \
   --tag-format="${MODULE}-v\${version}" \
@@ -133,7 +138,7 @@ let reason = null;
 if (nextVersion) {
   outcome = "release";
 } else if (wrongBranch) {
-  reason = `semantic-release is configured for branch(es) ${wrongBranch[1]}; preview could not simulate main.`;
+  reason = `semantic-release reported branch mismatch (expected \`main\` after merge simulation). CI branch was \`${wrongBranch[1]}\`.`;
 } else if (prBlocked) {
   reason =
     "semantic-release treated this as a pull-request run. This should not happen after --ci false; check preview-semantic-release.sh.";
