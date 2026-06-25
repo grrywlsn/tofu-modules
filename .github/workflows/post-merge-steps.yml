@@ -76,6 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
         run: |
+          source ../scripts/resolve-pr-release-message.sh "${{ github.sha }}"
           cp ../.releaserc.json .releaserc.json
           npm install --no-save \
             semantic-release@22 \
