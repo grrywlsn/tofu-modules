@@ -3,9 +3,18 @@
  * individual commit messages. Falls back to @semantic-release/commit-analyzer
  * when SEMANTIC_RELEASE_PR_TITLE is unset.
  */
-const { analyzeCommits: defaultAnalyzeCommits } = require("@semantic-release/commit-analyzer");
+const path = require("path");
+const { createRequire } = require("module");
+
+function getDefaultAnalyzeCommits() {
+  // file: install symlinks this package to scripts/; resolve deps from the
+  // module directory where semantic-release runs (process.cwd()).
+  const requireFromModule = createRequire(path.join(process.cwd(), "package.json"));
+  return requireFromModule("@semantic-release/commit-analyzer").analyzeCommits;
+}
 
 async function analyzeCommits(pluginConfig, context) {
+  const defaultAnalyzeCommits = getDefaultAnalyzeCommits();
   const { commits, logger } = context;
   const title = process.env.SEMANTIC_RELEASE_PR_TITLE?.trim();
 
