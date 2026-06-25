@@ -8,7 +8,7 @@ jobs:
   find-changed-modules:
     runs-on: ubuntu-latest
     outputs:
-      modules-json: ${{ steps.scaleway-modules.outputs.modules-json }}
+      modules-json: ${{ steps.releasable-modules.outputs.modules-json }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -29,10 +29,16 @@ jobs:
           json: true
           escape_json: false
 
-      - name: Keep only scaleway modules
-        id: scaleway-modules
+      - name: Keep only directories with a module Makefile
+        id: releasable-modules
         run: |
-          filtered=$(echo '${{ steps.filter-modules.outputs.all_changed_files }}' | jq '[.[] | select(startswith("scaleway-"))]')
+          modules='${{ steps.filter-modules.outputs.all_changed_files }}'
+          filtered='[]'
+          for dir in $(echo "$modules" | jq -r '.[]'); do
+            if [ -f "${dir}/Makefile" ]; then
+              filtered=$(echo "$filtered" | jq -c --arg d "$dir" '. + [$d]')
+            fi
+          done
           echo "modules-json=$filtered" >> "$GITHUB_OUTPUT"
 
   update-module-versions:
