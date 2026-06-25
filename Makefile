@@ -1,6 +1,6 @@
 SHELL := bash
 
-MODULES := $(dir $(wildcard */Makefile))
+MODULES := $(dir $(wildcard */main.tf))
 
 .DEFAULT: build
 
@@ -53,7 +53,7 @@ clean:
 	done
 
 list-modules:
-	@echo "Modules with Makefiles:"
+	@echo "Modules:"
 	@for dir in $(MODULES); do \
 		echo "  - $$dir"; \
 	done

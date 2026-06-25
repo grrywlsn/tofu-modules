@@ -64,13 +64,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Keep only directories with a module Makefile
+      - name: Keep only directories with main.tf
         id: releasable-modules
         run: |
           modules='${{ needs.find-changed-modules.outputs.modules-json }}'
           filtered='[]'
           for dir in $(echo "$modules" | jq -r '.[]'); do
-            if [ -f "${dir}/Makefile" ]; then
+            if [ -f "${dir}/main.tf" ]; then
               filtered=$(echo "$filtered" | jq -c --arg d "$dir" '. + [$d]')
             fi
           done
