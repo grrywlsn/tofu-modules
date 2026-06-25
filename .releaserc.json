@@ -2,7 +2,7 @@
   "extends": "semantic-release-monorepo",
   "branches": ["main"],
   "plugins": [
-    "./semantic-release-pr-title-analyzer.cjs",
+    "semantic-release-pr-title-analyzer",
     "@semantic-release/release-notes-generator",
     "@semantic-release/github"
   ]
