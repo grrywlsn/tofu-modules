@@ -8,14 +8,14 @@ resource "random_password" "cluster_password" {
 }
 
 resource "scaleway_opensearch_deployment" "deployment" {
-  name        = var.opensearch_cluster_name
-  region      = var.scaleway_region
-  project_id  = var.scaleway_project_id
-  version     = var.opensearch_version
+  name       = var.opensearch_cluster_name
+  region     = var.scaleway_region
+  project_id = var.scaleway_project_id
+  version    = var.opensearch_version
   node_count = var.opensearch_node_count
-  node_type   = var.opensearch_node_type
-  user_name   = var.opensearch_user_name
-  password    = random_password.cluster_password.result
+  node_type  = var.opensearch_node_type
+  user_name  = var.opensearch_user_name
+  password   = random_password.cluster_password.result
 
   dynamic "private_network" {
     for_each = var.enable_private_endpoint ? [var.private_network_id] : []
