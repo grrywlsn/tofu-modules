@@ -30,14 +30,19 @@ npm install --no-save \
 
 export SEMANTIC_RELEASE_PACKAGE="${MODULE}"
 
+REPO_URL="https://github.com/${GITHUB_REPOSITORY:-grrywlsn/tofu-modules}.git"
+
 LOG_FILE="$(mktemp)"
 trap 'rm -f "${LOG_FILE}"' EXIT
 
-# Caller should set GITHUB_EVENT_NAME=push (and GITHUB_REF=refs/heads/main) so
-# semantic-release analyses the simulated merge without PR short-circuit, while
-# still using Actions git credentials and repository metadata.
+# GITHUB_EVENT_NAME cannot be overridden in GitHub Actions, so semantic-release
+# always sees pull_request. --ci false skips that short-circuit while still using
+# GITHUB_TOKEN for git authentication when GITHUB_ACTION is set.
 set +e
-npx semantic-release --dry-run --tag-format="${MODULE}-v\${version}" \
+npx semantic-release --dry-run --ci false \
+  --branches main \
+  -r "${REPO_URL}" \
+  --tag-format="${MODULE}-v\${version}" \
   >"${LOG_FILE}" 2>&1
 SR_STATUS=$?
 set -e
@@ -130,7 +135,8 @@ if (nextVersion) {
 } else if (wrongBranch) {
   reason = `semantic-release is configured for branch(es) ${wrongBranch[1]}; preview could not simulate main.`;
 } else if (prBlocked) {
-  reason = "semantic-release blocked the run as a pull-request event (use --ci false).";
+  reason =
+    "semantic-release treated this as a pull-request run. This should not happen after --ci false; check preview-semantic-release.sh.";
 } else if (behindRemote) {
   reason =
     "Git reported the preview branch is behind origin/main (often a token/auth issue during preview). Re-run checks or verify merge simulation.";
@@ -150,6 +156,12 @@ if (nextVersion) {
     }
     const hints = [];
     for (const c of nonReleasing) {
+      if (!/^[a-z]+(\([^)]+\))?(!)?:\s+.+/i.test(c.subject)) {
+        hints.push(
+          "Commit message is not Conventional Commits format — use `fix: …` or `fix(module): …` (patch), `feat: …` (minor), or a `BREAKING CHANGE:` footer (major)."
+        );
+        break;
+      }
       if (/^feat\([^)]+\)!:/.test(c.subject) || /^feat!:/.test(c.subject)) {
         hints.push(
           "`feat(scope)!:` in the header is not enough with the angular preset — add a `BREAKING CHANGE:` footer in the commit body (or squash-merge a PR whose body includes it)."

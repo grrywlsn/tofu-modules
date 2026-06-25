@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.find-changed-releasable-modules.outputs.modules-json != '[]' }}
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
     strategy:
       matrix:
@@ -107,9 +107,6 @@ jobs:
       - name: Preview semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_EVENT_NAME: push
-          GITHUB_REF: refs/heads/main
-          GITHUB_REF_NAME: main
         run: |
           bash scripts/preview-semantic-release.sh \
             "${{ matrix.module }}" \
