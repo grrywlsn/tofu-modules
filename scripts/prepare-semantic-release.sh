@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copy shared semantic-release config into the current module directory.
-# Run from <module>/ after npm install so the local plugin can resolve deps.
+# Copy shared semantic-release config and install the local PR-title plugin.
+# Run from <module>/ after the core semantic-release packages are installed.
 set -euo pipefail
 
 MODULE_DIR="$(pwd)"
@@ -12,5 +12,4 @@ if [[ "${MODULE_DIR}" == "${REPO_ROOT}" ]]; then
 fi
 
 cp "${REPO_ROOT}/.releaserc.json" "${MODULE_DIR}/.releaserc.json"
-cp "${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer.cjs" \
-  "${MODULE_DIR}/semantic-release-pr-title-analyzer.cjs"
+npm install --no-save "file:${REPO_ROOT}/scripts/semantic-release-pr-title-analyzer"
