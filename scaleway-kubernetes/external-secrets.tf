@@ -17,7 +17,7 @@ resource "scaleway_iam_policy" "external_secrets" {
   }
 }
 
-resource "kubernetes_secret" "scaleway_secret_manager_credentials" {
+resource "kubernetes_secret_v1" "scaleway_secret_manager_credentials" {
   metadata {
     name      = "scaleway-secret-manager-credentials"
     namespace = "kube-system"
