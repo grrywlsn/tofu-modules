@@ -48,6 +48,17 @@ On merge to `main`, changed modules are released automatically via [semantic-rel
 
 Prefer one module per pull request to avoid unintended version bumps.
 
+### Test releases locally
+
+Requires Docker:
+
+```bash
+./scripts/test-semantic-release.sh scaleway-kubernetes
+./scripts/test-semantic-release.sh scaleway-kubernetes --simulate-main
+```
+
+The second command simulates a post-merge run on `main` using the current branch's release config and module `package.json`. Without `GITHUB_TOKEN`, dry-run may stop at git push verification; that still validates `extends`, `package.json`, and dependency installation.
+
 ## Consumption with Terragrunt
 
 ```hcl
