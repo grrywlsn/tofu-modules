@@ -1,60 +1,46 @@
 SHELL := bash
 
-MODULES := $(dir $(wildcard */versions.tf))
+MODULES := $(patsubst %/versions.tf,%,$(wildcard */versions.tf))
+MODULE_DIRS := $(addsuffix /,$(MODULES))
+
+# Optional: limit targets to one module, e.g. make build MODULE=scaleway-database
+MODULE_FILTER = $(if $(MODULE),$(filter $(MODULE)/,$(MODULE_DIRS)),$(MODULE_DIRS))
 
 .DEFAULT: build
 
-init:
-	@for dir in $(MODULES); do \
-		echo "==== Running init in $$dir ===="; \
-		$(MAKE) -C $$dir init || exit 1; \
+define run-in-modules
+	@for dir in $(MODULE_FILTER); do \
+		echo "==== Running $(1) in $$dir ===="; \
+		(cd "$$dir" && $(2)) || exit 1; \
 	done
+endef
+
+init:
+	$(call run-in-modules,init,tofu init)
 
 test:
-	@for dir in $(MODULES); do \
-		echo "==== Running test in $$dir ===="; \
-		$(MAKE) -C $$dir test || exit 1; \
-	done
+	$(call run-in-modules,test,tofu test)
 
 validate:
-	@for dir in $(MODULES); do \
-		echo "==== Running validate in $$dir ===="; \
-		$(MAKE) -C $$dir validate || exit 1; \
-	done
+	$(call run-in-modules,validate,tofu validate)
 
 docs:
-	@for dir in $(MODULES); do \
-		echo "==== Running docs in $$dir ===="; \
-		$(MAKE) -C $$dir docs || exit 1; \
-	done
+	$(call run-in-modules,docs,terraform-docs markdown table --output-file README.md --output-mode inject .)
 
 lint:
-	@for dir in $(MODULES); do \
-		echo "==== Running lint in $$dir ===="; \
-		$(MAKE) -C $$dir lint || exit 1; \
-	done
+	$(call run-in-modules,lint,tflint --init && tflint)
 
 format:
-	@for dir in $(MODULES); do \
-		echo "==== Running format in $$dir ===="; \
-		$(MAKE) -C $$dir format || exit 1; \
-	done
+	$(call run-in-modules,format,tofu fmt -recursive .)
 
-build:
-	@for dir in $(MODULES); do \
-		echo "==== Running build in $$dir ===="; \
-		$(MAKE) -C $$dir build || exit 1; \
-	done
+build: init format lint docs test validate
 
 clean:
-	@for dir in $(MODULES); do \
-		echo "==== Running clean in $$dir ===="; \
-		$(MAKE) -C $$dir clean || exit 1; \
-	done
+	$(call run-in-modules,clean,rm -rf .terraform)
 
 list-modules:
 	@echo "Modules:"
-	@for dir in $(MODULES); do \
+	@for dir in $(MODULE_DIRS); do \
 		echo "  - $$dir"; \
 	done
 

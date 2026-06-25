@@ -33,7 +33,7 @@ make list-modules
 Build a single module (format, lint, docs, test, validate):
 
 ```bash
-make -C scaleway-database build
+make build MODULE=scaleway-database
 ```
 
 Build all modules:
