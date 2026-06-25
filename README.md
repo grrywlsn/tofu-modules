@@ -4,7 +4,7 @@ OpenTofu modules packaged as a monorepo with independent per-module versioning.
 
 ## Modules
 
-Each top-level directory with a `main.tf` is a versioned module. Current modules:
+Each top-level directory with a `versions.tf` is a versioned module. Current modules:
 
 | Module | Description |
 |--------|-------------|
