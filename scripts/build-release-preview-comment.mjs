@@ -26,7 +26,8 @@ const lines = [
   "",
   "## Release preview",
   "",
-  "Predicted **post-merge** module tags from `semantic-release` (dry-run on a simulated merge to `main`).",
+  "Predicted **post-merge** module tags from `semantic-release` (dry-run on a simulated squash merge to `main`).",
+  "Version bumps use the **pull request title** (and description for breaking changes), not individual commit messages.",
   "",
   "| Module | Current | After merge |",
   "| --- | --- | --- |",
@@ -71,7 +72,7 @@ if (releasing.length) {
 lines.push(
   "",
   "---",
-  "_Update commit messages or PR squash-merge body before merging if the preview is not what you expect._"
+  "_Version bumps use the **PR title** (`feat:`, `fix:`, etc.). Put `BREAKING CHANGE:` in the PR description for major releases. Individual commit messages on the branch are ignored._"
 );
 
 console.log(lines.join("\n"));

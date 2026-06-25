@@ -96,17 +96,20 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Simulate merge to main
+      - name: Simulate squash merge to main
+        env:
+          SEMANTIC_RELEASE_PR_TITLE: ${{ github.event.pull_request.title }}
+          SEMANTIC_RELEASE_PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin "${{ github.event.pull_request.base.sha }}"
-          git checkout -B main "${{ github.event.pull_request.base.sha }}"
-          git merge --no-edit "${{ github.event.pull_request.head.sha }}"
+          bash scripts/simulate-squash-merge.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
 
       - name: Preview semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEMANTIC_RELEASE_PR_TITLE: ${{ github.event.pull_request.title }}
+          SEMANTIC_RELEASE_PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           bash scripts/preview-semantic-release.sh \
             "${{ matrix.module }}" \

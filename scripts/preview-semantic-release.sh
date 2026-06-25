@@ -56,6 +56,8 @@ node --input-type=module - "${MODULE}" "${OUTPUT}" "${SR_STATUS}" "${LOG_FILE}" 
 import { readFileSync, writeFileSync } from "node:fs";
 
 const [module, output, statusCode, logFile] = process.argv.slice(2);
+const prTitle = process.env.SEMANTIC_RELEASE_PR_TITLE?.trim() || null;
+const prBody = process.env.SEMANTIC_RELEASE_PR_BODY?.trim() || null;
 const log = readFileSync(logFile, "utf8");
 const lines = log.split("\n");
 
@@ -96,7 +98,9 @@ const packageCommits = commitsSinceMatch ? Number(commitsSinceMatch[1]) : null;
 const analyzedCommits = [];
 for (let i = 0; i < lines.length; i++) {
   const plain = stripAnsi(lines[i]);
-  const analyzing = plain.match(/Analyzing commit: (.+)$/);
+  const analyzing =
+    plain.match(/Analyzing pull request title: (.+)$/) ||
+    plain.match(/Analyzing commit: (.+)$/);
   if (!analyzing) continue;
   const subject = analyzing[1].trim();
   let triggersRelease = true;
@@ -150,35 +154,40 @@ if (nextVersion) {
     reason =
       "No commits touching this module since the last release tag. Only changes under the module directory count.";
   } else if (analyzedCommits.length === 0) {
-    reason = "Commits touch this module but none were eligible for version analysis.";
+    reason = prTitle
+      ? `Module files changed, but the pull request title \`${prTitle}\` did not produce a release type.`
+      : "Commits touch this module but none were eligible for version analysis.";
   } else {
     const nonReleasing = analyzedCommits.filter((c) => !c.triggers_release);
-    const parts = [
-      "Commit(s) touch this module but none produce a semver bump under the angular preset:",
-    ];
-    for (const c of nonReleasing) {
-      parts.push(`- \`${c.subject}\``);
+    const parts = prTitle
+      ? [
+          "This module changed, but the **pull request title** does not produce a semver bump:",
+          `- \`${prTitle}\``,
+        ]
+      : [
+          "Commit(s) touch this module but none produce a semver bump under the angular preset:",
+        ];
+    if (!prTitle) {
+      for (const c of nonReleasing) {
+        parts.push(`- \`${c.subject}\``);
+      }
     }
     const hints = [];
-    for (const c of nonReleasing) {
-      if (!/^[a-z]+(\([^)]+\))?(!)?:\s+.+/i.test(c.subject)) {
-        hints.push(
-          "Commit message is not Conventional Commits format — use `fix: …` or `fix(module): …` (patch), `feat: …` (minor), or a `BREAKING CHANGE:` footer (major)."
-        );
-        break;
-      }
-      if (/^feat\([^)]+\)!:/.test(c.subject) || /^feat!:/.test(c.subject)) {
-        hints.push(
-          "`feat(scope)!:` in the header is not enough with the angular preset — add a `BREAKING CHANGE:` footer in the commit body (or squash-merge a PR whose body includes it)."
-        );
-        break;
-      }
-      if (/^(docs|style|chore|refactor|test|ci|build)\(/i.test(c.subject)) {
-        hints.push(
-          "Non-releasing types (`docs`, `style`, `chore`, etc.) do not bump versions — use `fix` (patch) or `feat` (minor)."
-        );
-        break;
-      }
+    const titleToCheck = prTitle ?? nonReleasing[0]?.subject ?? "";
+    if (!/^[a-z]+(\([^)]+\))?(!)?:\s+.+/i.test(titleToCheck)) {
+      hints.push(
+        prTitle
+          ? "PR title must follow Conventional Commits — e.g. `fix: …` (patch), `feat: …` (minor), or a `BREAKING CHANGE:` line in the PR description (major)."
+          : "Commit message is not Conventional Commits format — use `fix: …` or `fix(module): …` (patch), `feat: …` (minor), or a `BREAKING CHANGE:` footer (major)."
+      );
+    } else if (/^feat\([^)]+\)!:/.test(titleToCheck) || /^feat!:/.test(titleToCheck)) {
+      hints.push(
+        "`feat!:` in the title is not enough with the angular preset — add a `BREAKING CHANGE:` line to the PR description."
+      );
+    } else if (/^(docs|style|chore|refactor|test|ci|build):/i.test(titleToCheck)) {
+      hints.push(
+        "Non-releasing types (`docs:`, `style:`, `chore:`, etc.) do not bump versions — use `fix:` (patch) or `feat:` (minor)."
+      );
     }
     if (hints.length) {
       parts.push("", "**How to fix:**", ...hints.map((h) => `- ${h}`));
@@ -200,6 +209,8 @@ if (nextVersion) {
 const result = {
   module,
   outcome,
+  release_message_source: prTitle ? "pull_request_title" : "commit_messages",
+  pr_title: prTitle,
   current_version: currentVersion,
   current_tag: currentTag,
   next_version: nextVersion,
