@@ -50,16 +50,29 @@ jobs:
           files_ignore: |
             .github/**
             .cursor/**
+            scripts/**
           json: true
           escape_json: false
 
-  test-module:
+  find-changed-scaleway-modules:
     needs: find-changed-modules
     runs-on: ubuntu-latest
-    if: ${{ needs.find-changed-modules.outputs.modules-json != '[]' }}
+    outputs:
+      modules-json: ${{ steps.scaleway-modules.outputs.modules-json }}
+    steps:
+      - name: Keep only scaleway modules
+        id: scaleway-modules
+        run: |
+          filtered=$(echo '${{ needs.find-changed-modules.outputs.modules-json }}' | jq '[.[] | select(startswith("scaleway-"))]')
+          echo "modules-json=$filtered" >> "$GITHUB_OUTPUT"
+
+  test-module:
+    needs: find-changed-scaleway-modules
+    runs-on: ubuntu-latest
+    if: ${{ needs.find-changed-scaleway-modules.outputs.modules-json != '[]' }}
     strategy:
       matrix:
-        module: ${{ fromJson(needs.find-changed-modules.outputs.modules-json) }}
+        module: ${{ fromJson(needs.find-changed-scaleway-modules.outputs.modules-json) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
@@ -109,13 +122,13 @@ jobs:
 
   all-tests-pass:
     name: all-tests-pass
-    needs: [find-changed-modules, test-module]
-    if: ${{ always() && !cancelled() && needs.find-changed-modules.result == 'success' }}
+    needs: [find-changed-scaleway-modules, test-module]
+    if: ${{ always() && !cancelled() && needs.find-changed-scaleway-modules.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify module test results
         run: |
-          modules='${{ needs.find-changed-modules.outputs.modules-json }}'
+          modules='${{ needs.find-changed-scaleway-modules.outputs.modules-json }}'
           if [ "$modules" = "[]" ]; then
             echo "No module directories changed; module tests not required."
             exit 0

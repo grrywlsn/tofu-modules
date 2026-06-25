@@ -8,7 +8,7 @@ jobs:
   find-changed-modules:
     runs-on: ubuntu-latest
     outputs:
-      modules-json: ${{ steps.filter-modules.outputs.all_changed_files }}
+      modules-json: ${{ steps.scaleway-modules.outputs.modules-json }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -25,8 +25,15 @@ jobs:
           files_ignore: |
             .github/**
             .cursor/**
+            scripts/**
           json: true
           escape_json: false
+
+      - name: Keep only scaleway modules
+        id: scaleway-modules
+        run: |
+          filtered=$(echo '${{ steps.filter-modules.outputs.all_changed_files }}' | jq '[.[] | select(startswith("scaleway-"))]')
+          echo "modules-json=$filtered" >> "$GITHUB_OUTPUT"
 
   update-module-versions:
     needs: find-changed-modules
@@ -48,43 +55,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
 
       - name: Configure git for semantic release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Install semantic-release in module
+      - name: Run semantic-release
         working-directory: ${{ matrix.module }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
         run: |
+          cp ../.releaserc.json .releaserc.json
           npm install --no-save \
             semantic-release@22 \
             semantic-release-monorepo@8.0.2 \
             @semantic-release/commit-analyzer \
-            @semantic-release/release-notes-generator
-
-      - name: Copy release configuration to module
-        run: cp .releaserc.json ${{ matrix.module }}/.releaserc.json
-
-      - name: Update version with Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v6.0.0
-        with:
-          semantic_version: 22
-          working_directory: ${{ matrix.module }}
-          tag_format: ${{ matrix.module }}-v${version}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
-
-      - name: Create GitHub release
-        if: steps.semantic.outputs.new_release_published == 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ matrix.module }}-v${{ steps.semantic.outputs.new_release_version }}
-          name: ${{ matrix.module }}-v${{ steps.semantic.outputs.new_release_version }}
-          body: ${{ steps.semantic.outputs.new_release_notes }}
-          target_commitish: main
+            @semantic-release/release-notes-generator \
+            @semantic-release/github@10.3.5
+          npx semantic-release --tag-format="${{ matrix.module }}-v\${version}"
