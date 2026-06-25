@@ -50,7 +50,7 @@ docker run --rm \
       @semantic-release/release-notes-generator \
       @semantic-release/github@10.3.5
 
-    cp ../.releaserc.json .releaserc.json
+    bash ../scripts/prepare-semantic-release.sh
 
     export SEMANTIC_RELEASE_PACKAGE="${MODULE}"
     export CI=true
