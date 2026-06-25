@@ -8,7 +8,7 @@ resource "helm_release" "flux_operator" {
   depends_on       = [scaleway_k8s_pool.pools]
 }
 
-resource "kubernetes_secret" "flux_git_credentials" {
+resource "kubernetes_secret_v1" "flux_git_credentials" {
   depends_on = [helm_release.flux_operator]
 
   metadata {
@@ -27,7 +27,7 @@ resource "kubernetes_secret" "flux_git_credentials" {
 resource "helm_release" "flux_instance" {
   depends_on = [
     helm_release.flux_operator,
-    kubernetes_secret.flux_git_credentials,
+    kubernetes_secret_v1.flux_git_credentials,
   ]
 
   name       = "flux"
