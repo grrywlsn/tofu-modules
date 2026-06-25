@@ -3,14 +3,14 @@
  * individual commit messages. Falls back to @semantic-release/commit-analyzer
  * when SEMANTIC_RELEASE_PR_TITLE is unset.
  */
-import commitAnalyzer from "@semantic-release/commit-analyzer";
+import { analyzeCommits as defaultAnalyzeCommits } from "@semantic-release/commit-analyzer";
 
 export async function analyzeCommits(pluginConfig, context) {
   const { commits, logger } = context;
   const title = process.env.SEMANTIC_RELEASE_PR_TITLE?.trim();
 
   if (!title) {
-    return commitAnalyzer.analyzeCommits(pluginConfig, context);
+    return defaultAnalyzeCommits(pluginConfig, context);
   }
 
   if (!commits?.length) {
@@ -23,7 +23,7 @@ export async function analyzeCommits(pluginConfig, context) {
 
   logger.log("Analyzing pull request title: %s", title);
 
-  return commitAnalyzer.analyzeCommits(pluginConfig, {
+  return defaultAnalyzeCommits(pluginConfig, {
     ...context,
     commits: [
       {
