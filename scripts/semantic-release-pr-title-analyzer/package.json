@@ -2,5 +2,8 @@
   "name": "semantic-release-pr-title-analyzer",
   "private": true,
   "version": "1.0.0",
-  "main": "index.cjs"
+  "main": "index.cjs",
+  "dependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.0"
+  }
 }
