@@ -3,9 +3,9 @@
  * individual commit messages. Falls back to @semantic-release/commit-analyzer
  * when SEMANTIC_RELEASE_PR_TITLE is unset.
  */
-import { analyzeCommits as defaultAnalyzeCommits } from "@semantic-release/commit-analyzer";
+const { analyzeCommits: defaultAnalyzeCommits } = require("@semantic-release/commit-analyzer");
 
-export async function analyzeCommits(pluginConfig, context) {
+async function analyzeCommits(pluginConfig, context) {
   const { commits, logger } = context;
   const title = process.env.SEMANTIC_RELEASE_PR_TITLE?.trim();
 
@@ -35,4 +35,4 @@ export async function analyzeCommits(pluginConfig, context) {
   });
 }
 
-export default { analyzeCommits };
+module.exports = { analyzeCommits };
