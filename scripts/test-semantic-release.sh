@@ -26,7 +26,7 @@ docker run --rm \
   -e "SIMULATE_MAIN=${SIMULATE_MAIN}" \
   -e "SOURCE_BRANCH=${SOURCE_BRANCH}" \
   -e "GITHUB_TOKEN=${GITHUB_TOKEN:-dry-run-token}" \
-  node:22-bookworm \
+  node:24-bookworm \
   bash -ec '
     set -euo pipefail
     cp -a /src /repo
