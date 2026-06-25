@@ -43,13 +43,6 @@ docker run --rm \
     fi
 
     cd "${MODULE}"
-    npm install --no-save \
-      semantic-release@22 \
-      semantic-release-monorepo@8.0.2 \
-      @semantic-release/commit-analyzer \
-      @semantic-release/release-notes-generator \
-      @semantic-release/github@10.3.5
-
     bash ../scripts/prepare-semantic-release.sh
 
     export SEMANTIC_RELEASE_PACKAGE="${MODULE}"
