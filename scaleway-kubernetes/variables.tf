@@ -122,7 +122,7 @@ variable "create_lb" {
 }
 
 variable "lb_type" {
-  description = "Type of the Scaleway Load Balancer (e.g. LB-S, LB-GP-M)"
+  description = "Type of the Scaleway Load balancer (e.g. LB-S, LB-GP-M)"
   type        = string
   default     = "LB-S"
 }
