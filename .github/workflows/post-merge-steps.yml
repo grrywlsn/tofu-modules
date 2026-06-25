@@ -48,10 +48,23 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Configure git for semantic release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install semantic-release in module
+        working-directory: ${{ matrix.module }}
+        run: |
+          npm install --no-save \
+            semantic-release@22 \
+            semantic-release-monorepo@8.0.2 \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator
 
       - name: Copy release configuration to module
         run: cp .releaserc.json ${{ matrix.module }}/.releaserc.json
@@ -63,8 +76,6 @@ jobs:
           semantic_version: 22
           working_directory: ${{ matrix.module }}
           tag_format: ${{ matrix.module }}-v${version}
-          extra_plugins: |
-            semantic-release-monorepo@8.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEMANTIC_RELEASE_PACKAGE: ${{ matrix.module }}
