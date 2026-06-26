@@ -12,10 +12,11 @@ resource "scaleway_opensearch_deployment" "deployment" {
   region     = var.scaleway_region
   project_id = var.scaleway_project_id
   version    = var.opensearch_version
-  node_count = var.opensearch_node_count
-  node_type  = var.opensearch_node_type
-  user_name  = var.opensearch_user_name
-  password   = random_password.cluster_password.result
+  # Keep node_amount while existing deployments have it in state; node_count is a ForceNew rename.
+  node_amount = var.opensearch_node_count
+  node_type   = var.opensearch_node_type
+  user_name   = var.opensearch_user_name
+  password    = random_password.cluster_password.result
 
   dynamic "private_network" {
     for_each = var.enable_private_endpoint ? [var.private_network_id] : []

@@ -42,7 +42,7 @@ variable "enable_public_endpoint" {
 }
 
 variable "private_network_id" {
-  description = "Private network ID for internal OpenSearch API access. Required when enable_private_endpoint is true."
+  description = "Private network ID for internal OpenSearch API access (uuid without regional prefix). Required when enable_private_endpoint is true."
   type        = string
   default     = null
   nullable    = true
