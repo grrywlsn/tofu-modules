@@ -1,3 +1,9 @@
+locals {
+  # Clusters created with older provider versions store bare UUIDs in state; VPC
+  # outputs may use regional IDs (region/uuid). Normalise so plans stay in-place.
+  private_network_id = replace(var.private_network_id, "${var.scaleway_region}/", "")
+}
+
 resource "scaleway_k8s_cluster" "cluster" {
   name                        = var.kubernetes_cluster_name
   region                      = var.scaleway_region
@@ -5,7 +11,7 @@ resource "scaleway_k8s_cluster" "cluster" {
   version                     = var.kubernetes_cluster_version
   cni                         = "cilium"
   delete_additional_resources = true
-  private_network_id          = var.private_network_id
+  private_network_id          = local.private_network_id
 
   autoscaler_config {
     disable_scale_down              = false
@@ -17,6 +23,9 @@ resource "scaleway_k8s_cluster" "cluster" {
     balance_similar_node_groups     = true
     expendable_pods_priority_cutoff = -5
     max_graceful_termination_sec    = 600
+    # Immutable after creation; omitting these forces cluster replacement.
+    log_level                     = 2
+    skip_nodes_with_local_storage = true
   }
 
   auto_upgrade {
