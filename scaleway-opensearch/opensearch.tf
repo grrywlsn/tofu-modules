@@ -28,6 +28,17 @@ resource "scaleway_opensearch_deployment" "deployment" {
     type       = var.opensearch_volume_type
     size_in_gb = var.opensearch_volume_size_in_gb
   }
+
+  lifecycle {
+    # Password and user_name are write-only; import leaves them unset and the
+    # provider would otherwise plan replacement. private_network is already
+    # attached in the API but may not be populated in state after import.
+    ignore_changes = [
+      password,
+      user_name,
+      private_network,
+    ]
+  }
 }
 
 locals {
