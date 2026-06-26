@@ -78,6 +78,18 @@ variable "kubernetes_cluster_version" {
   default     = "1.34"
 }
 
+variable "kubernetes_autoscaler_log_level" {
+  description = "Cluster autoscaler log verbosity (0–4). Immutable after cluster creation."
+  type        = number
+  default     = 2
+}
+
+variable "kubernetes_autoscaler_skip_nodes_with_local_storage" {
+  description = "Whether the autoscaler may scale down nodes with local storage. Immutable after cluster creation."
+  type        = bool
+  default     = true
+}
+
 variable "kubernetes_node_pools" {
   description = <<-EOT
     Node pool(s) for the cluster. root_volume_type defaults to sbs_5k (block storage) and root_volume_size_in_gb to 20,
