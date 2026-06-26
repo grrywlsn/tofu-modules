@@ -120,7 +120,7 @@ variable "kubernetes_node_pools" {
 }
 
 variable "private_network_id" {
-  description = "ID of the private network in which to place the Kubernetes cluster"
+  description = "ID of the private network in which to place the Kubernetes cluster (uuid without regional prefix)"
   type        = string
 }
 
