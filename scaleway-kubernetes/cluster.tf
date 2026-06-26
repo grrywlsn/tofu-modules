@@ -23,9 +23,8 @@ resource "scaleway_k8s_cluster" "cluster" {
     balance_similar_node_groups     = true
     expendable_pods_priority_cutoff = -5
     max_graceful_termination_sec    = 600
-    # Immutable after creation; omitting these forces cluster replacement.
-    log_level                     = 2
-    skip_nodes_with_local_storage = true
+    log_level                       = var.kubernetes_autoscaler_log_level
+    skip_nodes_with_local_storage   = var.kubernetes_autoscaler_skip_nodes_with_local_storage
   }
 
   auto_upgrade {
