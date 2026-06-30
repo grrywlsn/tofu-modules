@@ -3,7 +3,7 @@ resource "helm_release" "flux_operator" {
   namespace        = "flux-system"
   repository       = "oci://ghcr.io/controlplaneio-fluxcd/charts"
   chart            = "flux-operator"
-  version          = "0.52.0"
+  version          = "0.53.0"
   create_namespace = true
   depends_on       = [scaleway_k8s_pool.pools]
 }
@@ -34,7 +34,7 @@ resource "helm_release" "flux_instance" {
   namespace  = "flux-system"
   repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
   chart      = "flux-instance"
-  version    = "0.52.0"
+  version    = "0.53.0"
 
   values = [
     file("values/components.yaml"),
