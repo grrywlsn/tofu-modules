@@ -34,7 +34,7 @@ resource "helm_release" "flux_instance" {
   namespace  = "flux-system"
   repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
   chart      = "flux-instance"
-  version    = "0.54.0"
+  version    = "0.54.1"
 
   values = [
     file("values/components.yaml"),
