@@ -8,7 +8,7 @@ Each top-level directory with a `versions.tf` is a versioned module. Current mod
 
 | Module | Description |
 |--------|-------------|
-| `scaleway-database` | Managed PostgreSQL (RDB) with secrets |
+| `scaleway-database-instance` | Managed PostgreSQL (RDB) with secrets |
 | `scaleway-kubernetes` | Kapsule cluster with Flux bootstrap |
 | `scaleway-opensearch` | Managed OpenSearch deployment |
 | `scaleway-network` | VPC and private network |
@@ -33,7 +33,7 @@ make list-modules
 Build a single module (format, lint, docs, test, validate):
 
 ```bash
-make build MODULE=scaleway-database
+make build MODULE=scaleway-database-instance
 ```
 
 Build all modules:
@@ -44,7 +44,7 @@ make build
 
 ## Releases
 
-Modules are versioned independently. Tags follow `{module-name}-v{semver}` (for example `scaleway-database-v4.0.1`).
+Modules are versioned independently. Tags follow `{module-name}-v{semver}` (for example `scaleway-database-instance-v4.1.0`).
 
 On merge to `main`, changed modules are released automatically via [semantic-release](https://semantic-release.gitbook.io/) using [Conventional Commits](https://www.conventionalcommits.org/) on pull request titles.
 
