@@ -1,5 +1,5 @@
 {
-  "name": "scaleway-database",
+  "name": "scaleway-database-instance",
   "private": true,
   "version": "0.0.0"
 }

@@ -3,7 +3,7 @@ SHELL := bash
 MODULES := $(patsubst %/versions.tf,%,$(wildcard */versions.tf))
 MODULE_DIRS := $(addsuffix /,$(MODULES))
 
-# Optional: limit targets to one module, e.g. make build MODULE=scaleway-database
+# Optional: limit targets to one module, e.g. make build MODULE=scaleway-database-instance
 MODULE_FILTER = $(if $(MODULE),$(filter $(MODULE)/,$(MODULE_DIRS)),$(MODULE_DIRS))
 
 .DEFAULT: build
