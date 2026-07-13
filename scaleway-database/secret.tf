@@ -16,7 +16,7 @@ locals {
   ) : null
 
   # JSON keys for External Secrets dataFrom.extract → Kubernetes Secret.
-  secret_manager_env = {
+  secret_manager_key_values = {
     DATABASE_HOST     = var.database_hostname
     DATABASE_PORT     = tostring(var.database_port)
     DATABASE_NAME     = var.database_name
@@ -40,5 +40,5 @@ resource "scaleway_secret_version" "latest" {
   count = var.store_password_in_secret_manager && var.create_user ? 1 : 0
 
   secret_id = scaleway_secret.main[0].id
-  data      = jsonencode(local.secret_manager_env)
+  data      = jsonencode(local.secret_manager_key_values)
 }
