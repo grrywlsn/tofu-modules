@@ -68,3 +68,16 @@ variable "store_password_in_secret_manager" {
   type        = bool
   default     = false
 }
+
+variable "database_hostname" {
+  description = "PostgreSQL hostname (e.g. RDB private network IP). When set with store_password_in_secret_manager, the secret stores JSON env vars for External Secrets"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "database_port" {
+  description = "PostgreSQL port used in Secret Manager env vars when database_hostname is set"
+  type        = number
+  default     = 5432
+}
