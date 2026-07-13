@@ -6,7 +6,7 @@ variable "domain" {
 variable "dnssec_enabled" {
   description = "Whether DNSSEC is enabled for the zone"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "a_records" {
