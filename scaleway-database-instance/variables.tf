@@ -46,6 +46,12 @@ variable "private_network_id" {
   type        = string
 }
 
+variable "enable_public_network" {
+  description = "When true, attach a public load balancer endpoint in addition to the private network endpoint"
+  type        = bool
+  default     = false
+}
+
 variable "volume_type" {
   description = "Volume type to use for the database instance"
   type        = string

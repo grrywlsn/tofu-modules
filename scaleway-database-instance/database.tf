@@ -28,6 +28,11 @@ resource "scaleway_rdb_instance" "main" {
     pn_id = var.private_network_id
   }
 
+  dynamic "load_balancer" {
+    for_each = var.enable_public_network ? [1] : []
+    content {}
+  }
+
   settings = var.database_settings
 }
 
