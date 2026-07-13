@@ -15,7 +15,7 @@ locals {
     var.database_name,
   ) : null
 
-  # JSON keys for External Secrets dataFrom.extract → Kubernetes Secret.
+  # JSON keys for common Postgres environment variables
   secret_manager_key_values = {
     DATABASE_HOST     = var.database_hostname
     DATABASE_PORT     = tostring(var.database_port)
