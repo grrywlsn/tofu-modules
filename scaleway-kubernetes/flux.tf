@@ -3,7 +3,7 @@ resource "helm_release" "flux_operator" {
   namespace        = "flux-system"
   repository       = "oci://ghcr.io/controlplaneio-fluxcd/charts"
   chart            = "flux-operator"
-  version          = "0.54.1"
+  version          = "0.55.0"
   create_namespace = true
   depends_on       = [scaleway_k8s_pool.pools]
 }
