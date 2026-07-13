@@ -15,7 +15,8 @@ locals {
     var.database_name,
   ) : null
 
-  secret_manager_env = var.database_hostname != null ? {
+  # JSON keys for External Secrets dataFrom.extract → Kubernetes Secret.
+  secret_manager_env = {
     DATABASE_HOST     = var.database_hostname
     DATABASE_PORT     = tostring(var.database_port)
     DATABASE_NAME     = var.database_name
@@ -32,12 +33,12 @@ locals {
     POSTGRES_DB       = var.database_name
     POSTGRES_USER     = local.database_user_name
     POSTGRES_PASSWORD = local.database_user_password
-  } : null
+  }
 }
 
 resource "scaleway_secret_version" "latest" {
   count = var.store_password_in_secret_manager && var.create_user ? 1 : 0
 
   secret_id = scaleway_secret.main[0].id
-  data      = local.secret_manager_env != null ? jsonencode(local.secret_manager_env) : local.database_user_password
+  data      = jsonencode(local.secret_manager_env)
 }
