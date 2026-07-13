@@ -64,13 +64,18 @@ variable "database_privilege_permission" {
 }
 
 variable "store_password_in_secret_manager" {
-  description = "Whether to store the database password in Scaleway Secret Manager"
+  description = "Whether to store database credentials in Scaleway Secret Manager as JSON env vars for External Secrets"
   type        = bool
   default     = false
+
+  validation {
+    condition     = !var.store_password_in_secret_manager || var.database_hostname != null
+    error_message = "database_hostname must be set when store_password_in_secret_manager is true."
+  }
 }
 
 variable "database_hostname" {
-  description = "PostgreSQL hostname (e.g. RDB private network IP). When set with store_password_in_secret_manager, the secret stores JSON env vars for External Secrets"
+  description = "PostgreSQL hostname (e.g. RDB private network IP). Required when store_password_in_secret_manager is true; written as DATABASE_HOST, PGHOST, POSTGRES_HOST, etc."
   type        = string
   default     = null
   nullable    = true
