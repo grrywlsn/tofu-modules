@@ -14,10 +14,12 @@ resource "random_password" "db_password" {
 }
 
 locals {
-  database_user_name = var.create_user ? coalesce(var.database_user_name, random_uuid.db_username[0].result) : var.database_user_name
-  database_user_password = var.create_user ? coalesce(
-    var.database_user_password,
-    random_password.db_password[0].result,
+  # Use ternaries (not coalesce) so we never index empty count-0 random resources.
+  database_user_name = var.create_user ? (
+    var.database_user_name != null ? var.database_user_name : random_uuid.db_username[0].result
+  ) : var.database_user_name
+  database_user_password = var.create_user ? (
+    var.database_user_password != null ? var.database_user_password : random_password.db_password[0].result
   ) : null
   privilege_user_name     = var.create_user ? local.database_user_name : var.database_user_name
   privilege_database_name = var.create_database ? scaleway_rdb_database.main[0].name : var.database_name
