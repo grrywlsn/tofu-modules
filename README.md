@@ -9,6 +9,7 @@ Each top-level directory with a `versions.tf` is a versioned module. Current mod
 | Module | Description |
 |--------|-------------|
 | `scaleway-database-instance` | Managed PostgreSQL (RDB) with secrets |
+| `scaleway-database` | Logical database, user, and privileges on an existing RDB instance |
 | `scaleway-kubernetes` | Kapsule cluster with Flux bootstrap |
 | `scaleway-opensearch` | Managed OpenSearch deployment |
 | `scaleway-network` | VPC and private network |
