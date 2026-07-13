@@ -8,6 +8,7 @@ Each top-level directory with a `versions.tf` is a versioned module. Current mod
 
 | Module | Description |
 |--------|-------------|
+| `bunnynet-dns-zone` | Bunny.net DNS zone with A, CNAME, TXT, and MX records |
 | `scaleway-database-instance` | Managed PostgreSQL (RDB) with secrets |
 | `scaleway-database` | Logical database, user, and privileges on an existing RDB instance |
 | `scaleway-kubernetes` | Kapsule cluster with Flux bootstrap |
