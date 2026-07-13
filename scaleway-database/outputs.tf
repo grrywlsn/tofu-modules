@@ -24,6 +24,11 @@ output "database_secret_id" {
   value       = var.store_password_in_secret_manager && var.create_user ? scaleway_secret.main[0].id : null
 }
 
+output "database_port" {
+  description = "PostgreSQL port used in connection strings and Secret Manager env vars"
+  value       = var.database_port
+}
+
 output "database_url" {
   description = "PostgreSQL connection URL when database_hostname is set"
   value       = local.database_url
