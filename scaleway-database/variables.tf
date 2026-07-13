@@ -64,7 +64,7 @@ variable "database_privilege_permission" {
 }
 
 variable "store_password_in_secret_manager" {
-  description = "Whether to store database credentials in Scaleway Secret Manager as JSON env vars for External Secrets"
+  description = "Whether to store database credentials in Scaleway Secret Manager as JSON env vars"
   type        = bool
   default     = false
 
