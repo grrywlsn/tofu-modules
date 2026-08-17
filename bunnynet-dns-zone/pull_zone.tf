@@ -71,10 +71,12 @@ resource "bunnynet_pullzone" "this" {
 resource "bunnynet_dns_record" "pull_zone_cname" {
   for_each = local.pull_zone_cnames
 
-  zone        = bunnynet_dns_zone.this.id
-  name        = each.value.name
-  type        = "CNAME"
-  value       = bunnynet_pullzone.this[each.value.zone_key].cdn_domain
+  zone = bunnynet_dns_zone.this.id
+  name = each.value.name
+  type = "CNAME"
+  # cdn_domain is the parent (e.g. b-cdn.net); custom hostnames must CNAME to
+  # {pullzone_name}.{cdn_domain} (e.g. mastodon-site-cdn.b-cdn.net).
+  value       = "${bunnynet_pullzone.this[each.value.zone_key].name}.${bunnynet_pullzone.this[each.value.zone_key].cdn_domain}"
   accelerated = false
 }
 
