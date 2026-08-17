@@ -55,7 +55,7 @@ resource "terraform_data" "nameservers" {
       json+=']}'
 
       tmp="$(mktemp)"
-      http="$(curl -sS -o "$${tmp}" -w "%{http_code}" -X PUT \
+      http="$(curl -sS -o "$${tmp}" -w "%%{http_code}" -X PUT \
         "https://api.scaleway.com/domain/v2beta1/dns-zones/$${SCW_DOMAIN}/nameservers" \
         -H "X-Auth-Token: $${SCW_SECRET_KEY}" \
         -H "Content-Type: application/json" \
