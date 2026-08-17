@@ -20,6 +20,16 @@ locals {
       name     = rec.name
     }
   }
+
+  pull_zone_hostnames = {
+    for k, zone in local.pull_zones : k => zone
+    if zone.hostnames
+  }
+
+  pull_zone_wildcard_hostnames = {
+    for k, zone in local.pull_zones : k => zone
+    if zone.hostnames && zone.wildcard
+  }
 }
 
 resource "bunnynet_compute_script" "pull_zone" {
@@ -51,27 +61,11 @@ resource "bunnynet_pullzone" "this" {
   cache_vary            = toset(each.value.cache_vary)
 
   routing {
-    tier    = "Standard"
-    filters = contains(keys(local.pull_zone_middleware), each.key) ? toset(["all", "scripting"]) : toset(["all"])
+    tier = "Standard"
+    # Bunny requires "scripting" when middleware_script is set. Do not also send
+    # "all": the API drops it and the provider treats that as an inconsistent result.
+    filters = contains(keys(local.pull_zone_middleware), each.key) ? toset(["scripting"]) : null
   }
-}
-
-resource "bunnynet_pullzone_hostname" "record" {
-  for_each = local.pull_zones
-
-  pullzone    = bunnynet_pullzone.this[each.key].id
-  name        = "${each.value.record_name}.${var.domain}"
-  tls_enabled = each.value.tls
-  force_ssl   = each.value.force_ssl
-}
-
-resource "bunnynet_pullzone_hostname" "wildcard" {
-  for_each = { for k, zone in local.pull_zones : k => zone if zone.wildcard }
-
-  pullzone    = bunnynet_pullzone.this[each.key].id
-  name        = "*.${each.value.record_name}.${var.domain}"
-  tls_enabled = each.value.tls
-  force_ssl   = each.value.force_ssl
 }
 
 resource "bunnynet_dns_record" "pull_zone_cname" {
@@ -82,4 +76,27 @@ resource "bunnynet_dns_record" "pull_zone_cname" {
   type        = "CNAME"
   value       = bunnynet_pullzone.this[each.value.zone_key].cdn_domain
   accelerated = false
+}
+
+resource "bunnynet_pullzone_hostname" "record" {
+  for_each = local.pull_zone_hostnames
+
+  pullzone    = bunnynet_pullzone.this[each.key].id
+  name        = "${each.value.record_name}.${var.domain}"
+  tls_enabled = each.value.tls
+  force_ssl   = each.value.force_ssl
+
+  # Bunny validates that live DNS already points at the pull zone.
+  depends_on = [bunnynet_dns_record.pull_zone_cname]
+}
+
+resource "bunnynet_pullzone_hostname" "wildcard" {
+  for_each = local.pull_zone_wildcard_hostnames
+
+  pullzone    = bunnynet_pullzone.this[each.key].id
+  name        = "*.${each.value.record_name}.${var.domain}"
+  tls_enabled = each.value.tls
+  force_ssl   = each.value.force_ssl
+
+  depends_on = [bunnynet_dns_record.pull_zone_cname]
 }
