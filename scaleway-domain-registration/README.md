@@ -56,6 +56,8 @@ Look up `task_id` with the [`scaleway_domain_registration` data source](https://
 
 Note: changing the registrant after create requires a Scaleway domain trade (`TradeDomain`), not an in-place update. The module sets `lifecycle.ignore_changes` on `owner_contact` / `owner_contact_id` so config drift (e.g. after import) does not fail apply. Update contacts in the Scaleway console/API, then `tofu apply -refresh-only` to sync state.
 
+DNSSEC with a custom DS is managed by `null_resource.dnssec` (registrar API), not by `scaleway_domain_registration.dnssec`. That attribute is forced `false` in config and ignored afterward so the provider does not disable DNSSEC on the next apply.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
