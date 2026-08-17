@@ -24,8 +24,8 @@ output "auto_renew" {
 }
 
 output "dnssec" {
-  description = "Whether DNSSEC is enabled via this module (Bunny DS published at Scaleway)."
-  value       = var.dnssec
+  description = "Whether DNSSEC is requested via this module (var.dnssec is non-null)."
+  value       = local.dnssec_enabled
 }
 
 output "owner_contact_id" {
@@ -49,6 +49,6 @@ output "technical_contact" {
 }
 
 output "ds_record" {
-  description = "DS record configuration reported by the Scaleway registration resource (may lag API enable)."
+  description = "DS record reported by the Scaleway registration resource (may lag API enable)."
   value       = scaleway_domain_registration.this.ds_record
 }
