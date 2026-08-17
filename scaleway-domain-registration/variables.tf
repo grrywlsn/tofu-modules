@@ -67,6 +67,24 @@ variable "auto_renew" {
   default     = true
 }
 
+variable "nameservers" {
+  description = <<-EOT
+    Authoritative nameservers to set on the Scaleway DNS zone for this domain
+    (e.g. external DNS providers). Null means nameservers are not managed by
+    this module. When set, must include at least two nameservers.
+    The Terraform provider cannot set nameservers on scaleway_domain_registration;
+    this module applies them via the Scaleway DNS API / scw CLI.
+  EOT
+  type        = list(string)
+  nullable    = true
+  default     = null
+
+  validation {
+    condition     = var.nameservers == null || length(var.nameservers) >= 2
+    error_message = "nameservers must be null or a list of at least two nameserver hostnames."
+  }
+}
+
 variable "project_id" {
   description = "Scaleway project ID. Defaults to the project configured on the provider."
   type        = string

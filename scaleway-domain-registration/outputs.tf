@@ -52,3 +52,8 @@ output "ds_record" {
   description = "DS record reported by the registration resource (not managed by this module)."
   value       = scaleway_domain_registration.this.ds_record
 }
+
+output "nameservers" {
+  description = "Nameservers requested via this module (null when not managed)."
+  value       = var.nameservers == null ? null : local.nameservers_normalized
+}
