@@ -73,9 +73,9 @@ Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bu
 When `dnssec_enabled = true`, the module exposes:
 
 - `dnssec_enabled` — whether Bunny has DNSSEC on
-- `ds_record` — object matching [`scaleway-domain-registration`](../scaleway-domain-registration)’s `ds_record` input (`key_id`, `algorithm`, `digest`), or `null` until Bunny publishes DS values
+- `ds_record` — Scaleway-shaped DS object (`key_id`, `algorithm`, `digest`), or `null` until Bunny publishes values
 
-Example Terragrunt wiring:
+Pass `ds_record` into [`scaleway-domain-registration`](../scaleway-domain-registration) as `dnssec` (non-null enables DNSSEC with those values):
 
 ```hcl
 dependency "dns" {
@@ -83,8 +83,7 @@ dependency "dns" {
 }
 
 inputs = {
-  dnssec    = dependency.dns.outputs.dnssec_enabled && dependency.dns.outputs.ds_record != null
-  ds_record = dependency.dns.outputs.ds_record
+  dnssec = dependency.dns.outputs.ds_record
 }
 ```
 
