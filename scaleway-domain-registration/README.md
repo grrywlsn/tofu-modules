@@ -4,7 +4,7 @@ OpenTofu module to manage a [Scaleway domain registration](https://registry.terr
 
 DNSSEC is not managed here: the provider cannot set a custom DS record, so `dnssec` is ignored after create (configure DNSSEC in the console/API if needed).
 
-Optional `nameservers` updates the domain’s DNS zone delegation via the Scaleway DNS API (`scw dns record update-nameservers`, or curl). The registration resource itself cannot set nameservers.
+Set `nameservers` to the desired NS list for the domain’s **linked root DNS zone**. The provider cannot write zone nameservers, so this module keeps that zone in sync with the input (create/read/update via the Scaleway DNS API / `scw`). Omit `nameservers` (null) to leave NS unmanaged.
 
 ## Example
 
@@ -77,13 +77,14 @@ Note: changing the registrant after create requires a Scaleway domain trade (`Tr
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
 | <a name="requirement_scaleway"></a> [scaleway](#requirement\_scaleway) | 2.81.0 |
+| <a name="requirement_shell"></a> [shell](#requirement\_shell) | 1.7.10 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_scaleway"></a> [scaleway](#provider\_scaleway) | 2.81.0 |
-| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
+| <a name="provider_shell"></a> [shell](#provider\_shell) | 1.7.10 |
 
 ## Modules
 
@@ -94,7 +95,8 @@ No modules.
 | Name | Type |
 | ---- | ---- |
 | [scaleway_domain_registration.this](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/domain_registration) | resource |
-| [terraform_data.nameservers](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
+| [shell_script.root_nameservers](https://registry.terraform.io/providers/scottwinkler/shell/1.7.10/docs/resources/script) | resource |
+| [scaleway_domain_zone.root](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/data-sources/domain_zone) | data source |
 
 ## Inputs
 
@@ -103,7 +105,7 @@ No modules.
 | <a name="input_auto_renew"></a> [auto\_renew](#input\_auto\_renew) | Whether to enable auto-renewal for the domain. | `bool` | `true` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name to register or manage (e.g. example.com). One domain per module instance. | `string` | n/a | yes |
 | <a name="input_duration_in_years"></a> [duration\_in\_years](#input\_duration\_in\_years) | Registration period in years (used when purchasing a new domain). | `number` | `1` | no |
-| <a name="input_nameservers"></a> [nameservers](#input\_nameservers) | Authoritative nameservers to set on the Scaleway DNS zone for this domain<br/>(e.g. external DNS providers). Null means nameservers are not managed by<br/>this module. When set, must include at least two nameservers.<br/>The Terraform provider cannot set nameservers on scaleway\_domain\_registration;<br/>this module applies them via the Scaleway DNS API / scw CLI. | `list(string)` | `null` | no |
+| <a name="input_nameservers"></a> [nameservers](#input\_nameservers) | Desired authoritative nameservers for the domain's linked root DNS zone.<br/>Null means this module does not manage nameservers. When set, must include<br/>at least two hostnames; the root zone is updated to exactly this list.<br/>The Terraform provider cannot set nameservers on scaleway\_domain\_zone /<br/>scaleway\_domain\_registration; this module manages them via the DNS API. | `list(string)` | `null` | no |
 | <a name="input_owner_contact"></a> [owner\_contact](#input\_owner\_contact) | Owner contact details for the domain registration.<br/>Used when owner\_contact\_id is null.<br/>At least one of owner\_contact\_id or owner\_contact must be set. | <pre>object({<br/>    legal_form                  = string<br/>    firstname                   = string<br/>    lastname                    = string<br/>    email                       = string<br/>    phone_number                = string<br/>    address_line_1              = string<br/>    zip                         = string<br/>    city                        = string<br/>    country                     = string<br/>    address_line_2              = optional(string)<br/>    state                       = optional(string)<br/>    company_name                = optional(string)<br/>    email_alt                   = optional(string)<br/>    fax_number                  = optional(string)<br/>    vat_identification_code     = optional(string)<br/>    company_identification_code = optional(string)<br/>    lang                        = optional(string)<br/>    whois_opt_in                = optional(bool)<br/>    resale                      = optional(bool)<br/>  })</pre> | `null` | no |
 | <a name="input_owner_contact_id"></a> [owner\_contact\_id](#input\_owner\_contact\_id) | Existing Scaleway contact ID for the domain owner.<br/>Takes precedence over owner\_contact when both are set.<br/>At least one of owner\_contact\_id or owner\_contact must be set. | `string` | `null` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | Scaleway project ID. Defaults to the project configured on the provider. | `string` | `null` | no |
@@ -118,10 +120,11 @@ No modules.
 | <a name="output_domain"></a> [domain](#output\_domain) | Managed domain name. |
 | <a name="output_ds_record"></a> [ds\_record](#output\_ds\_record) | DS record reported by the registration resource (not managed by this module). |
 | <a name="output_id"></a> [id](#output\_id) | ID of the domain registration (project\_id/task\_id). |
-| <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | Nameservers requested via this module (null when not managed). |
+| <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | Nameservers requested for the linked root zone (null when not managed). |
 | <a name="output_owner_contact"></a> [owner\_contact](#output\_owner\_contact) | Owner contact details on the registration. |
 | <a name="output_owner_contact_id"></a> [owner\_contact\_id](#output\_owner\_contact\_id) | Owner contact ID assigned by Scaleway. |
 | <a name="output_project_id"></a> [project\_id](#output\_project\_id) | Scaleway project ID of the registration. |
+| <a name="output_root_zone_id"></a> [root\_zone\_id](#output\_root\_zone\_id) | ID of the linked root DNS zone (set when nameservers are managed). |
 | <a name="output_task_id"></a> [task\_id](#output\_task\_id) | Task ID of the domain registration. |
 | <a name="output_technical_contact"></a> [technical\_contact](#output\_technical\_contact) | Technical contact details returned by Scaleway. |
 <!-- END_TF_DOCS -->

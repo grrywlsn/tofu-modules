@@ -69,11 +69,11 @@ variable "auto_renew" {
 
 variable "nameservers" {
   description = <<-EOT
-    Authoritative nameservers to set on the Scaleway DNS zone for this domain
-    (e.g. external DNS providers). Null means nameservers are not managed by
-    this module. When set, must include at least two nameservers.
-    The Terraform provider cannot set nameservers on scaleway_domain_registration;
-    this module applies them via the Scaleway DNS API / scw CLI.
+    Desired authoritative nameservers for the domain's linked root DNS zone.
+    Null means this module does not manage nameservers. When set, must include
+    at least two hostnames; the root zone is updated to exactly this list.
+    The Terraform provider cannot set nameservers on scaleway_domain_zone /
+    scaleway_domain_registration; this module manages them via the DNS API.
   EOT
   type        = list(string)
   nullable    = true

@@ -54,6 +54,11 @@ output "ds_record" {
 }
 
 output "nameservers" {
-  description = "Nameservers requested via this module (null when not managed)."
+  description = "Nameservers requested for the linked root zone (null when not managed)."
   value       = var.nameservers == null ? null : local.nameservers_normalized
+}
+
+output "root_zone_id" {
+  description = "ID of the linked root DNS zone (set when nameservers are managed)."
+  value       = var.nameservers == null ? null : data.scaleway_domain_zone.root[0].id
 }
