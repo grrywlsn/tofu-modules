@@ -38,4 +38,14 @@ resource "scaleway_domain_registration" "this" {
       resale                      = owner_contact.value.resale
     }
   }
+
+  # Registrant changes require a Scaleway domain trade (TradeDomain), not an
+  # in-place UpdateDomain. Ignore after create so imported / drifted contacts
+  # do not fail apply; sync with `tofu apply -refresh-only` if needed.
+  lifecycle {
+    ignore_changes = [
+      owner_contact,
+      owner_contact_id,
+    ]
+  }
 }
