@@ -119,6 +119,11 @@ variable "pull_zones" {
     # Refresh expired objects in the background while continuing to serve the
     # cached response.
     use_background_update = optional(bool, false)
+    # Collapse concurrent cache-MISS requests for the same URL into a single
+    # origin fetch.
+    request_coalescing_enabled = optional(bool, false)
+    # Seconds to wait for a coalesced origin response before falling through.
+    request_coalescing_timeout = optional(number)
   }))
   default = []
 
