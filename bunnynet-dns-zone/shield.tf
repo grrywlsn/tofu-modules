@@ -18,7 +18,6 @@ resource "bunnynet_pullzone_shield" "a" {
 
   ddos {
     level = var.shield.ddos_level
-    mode  = var.shield.ddos_mode
   }
 
   waf {
@@ -35,7 +34,6 @@ resource "bunnynet_pullzone_shield" "cname" {
 
   ddos {
     level = var.shield.ddos_level
-    mode  = var.shield.ddos_mode
   }
 
   waf {

@@ -62,7 +62,6 @@ variable "shield" {
   type = object({
     tier       = optional(string, "Basic")
     ddos_level = optional(string, "Medium")
-    ddos_mode  = optional(string, "Block")
     waf        = optional(bool, true)
     waf_mode   = optional(string, "Block")
   })
@@ -76,11 +75,6 @@ variable "shield" {
   validation {
     condition     = contains(["Asleep", "Low", "Medium", "High", "Extreme"], var.shield.ddos_level)
     error_message = "shield.ddos_level must be one of: Asleep, Low, Medium, High, Extreme."
-  }
-
-  validation {
-    condition     = contains(["Block", "Log"], var.shield.ddos_mode)
-    error_message = "shield.ddos_mode must be one of: Block, Log."
   }
 
   validation {
