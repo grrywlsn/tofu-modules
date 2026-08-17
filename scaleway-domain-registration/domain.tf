@@ -7,7 +7,10 @@ resource "scaleway_domain_registration" "this" {
   domain_names      = [var.domain]
   duration_in_years = var.duration_in_years
   auto_renew        = var.auto_renew
-  # DNSSEC is managed outside this module (e.g. console); do not reconcile it.
+  # Provider cannot set a custom DS record (ds_record is computed-only), so
+  # registrar DNSSEC with external DNS must be configured outside Terraform
+  # (e.g. console/API). Ignore dnssec below so applies do not flip it.
+  # Revisit if the provider gains writable DS / DNSSEC support.
   dnssec = false
 
   project_id = var.project_id
@@ -40,8 +43,8 @@ resource "scaleway_domain_registration" "this" {
   }
 
   # - Registrant changes need a Scaleway domain trade (TradeDomain).
-  # - DNSSEC is intentionally ignored so it can be set manually without
-  #   Terraform flipping it on every apply. Sync contacts with refresh-only if needed.
+  # - dnssec is ignored because custom DS cannot be set via the provider yet.
+  #   Sync contacts with refresh-only if needed.
   lifecycle {
     ignore_changes = [
       owner_contact,
