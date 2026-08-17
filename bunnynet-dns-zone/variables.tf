@@ -123,7 +123,7 @@ variable "pull_zones" {
     # origin fetch.
     request_coalescing_enabled = optional(bool, false)
     # Seconds to wait for a coalesced origin response before falling through.
-    request_coalescing_timeout = optional(number)
+    request_coalescing_timeout = optional(number, 30)
   }))
   default = []
 
