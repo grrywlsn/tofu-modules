@@ -18,6 +18,27 @@ output "nameserver2" {
   value       = bunnynet_dns_zone.this.nameserver2
 }
 
+output "dnssec_enabled" {
+  description = "Whether DNSSEC is enabled on the Bunny.net DNS zone"
+  value       = bunnynet_dns_zone.this.dnssec_enabled
+}
+
+output "ds_record" {
+  description = <<-EOT
+    DS record shaped for scaleway-domain-registration's ds_record input
+    (key_id / algorithm / digest). Null when DNSSEC is disabled or Bunny has
+    not yet published DS values.
+  EOT
+  value = local.dnssec_ready ? {
+    key_id    = bunnynet_dns_zone.this.dnssec_keytag
+    algorithm = local.dnssec_algorithm_name
+    digest = {
+      type   = local.dnssec_digest_type_name
+      digest = bunnynet_dns_zone.this.dnssec_digest
+    }
+  } : null
+}
+
 output "a_record_ids" {
   description = "Map of A record keys to Bunny.net record IDs"
   value       = { for k, r in bunnynet_dns_record.a : k => r.id }
