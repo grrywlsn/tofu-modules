@@ -68,25 +68,14 @@ Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bu
 
 [Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium, WAF on/Block).
 
-## DNSSEC / Scaleway registrar
+## DNSSEC
 
 When `dnssec_enabled = true`, the module exposes:
 
 - `dnssec_enabled` — whether DNSSEC is on for the zone
-- `ds_record` — Scaleway-shaped DS object (`key_id`, `algorithm`, `digest`), or `null` until DS values are published
+- `ds_record` — DS object (`key_id`, `algorithm`, `digest`) with Scaleway-style enum strings, or `null` until DS values are published
 
-Wire into [`scaleway-domain-registration`](../scaleway-domain-registration):
-
-```hcl
-dependency "dns" {
-  config_path = "../../../../bunny/dns-zones/example.com"
-}
-
-inputs = {
-  dnssec_enabled   = dependency.dns.outputs.dnssec_enabled && dependency.dns.outputs.ds_record != null
-  dnssec_ds_record = dependency.dns.outputs.ds_record
-}
-```
+Use those values when configuring DNSSEC at your registrar (console or API).
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -142,7 +131,7 @@ No modules.
 | <a name="output_cname_shield_ids"></a> [cname\_shield\_ids](#output\_cname\_shield\_ids) | Map of CNAME record keys with Bunny Shield enabled to their Shield IDs |
 | <a name="output_dnssec_enabled"></a> [dnssec\_enabled](#output\_dnssec\_enabled) | Whether DNSSEC is enabled on the Bunny.net DNS zone |
 | <a name="output_domain"></a> [domain](#output\_domain) | Domain name of the DNS zone |
-| <a name="output_ds_record"></a> [ds\_record](#output\_ds\_record) | DS record shaped for scaleway-domain-registration's ds\_record input<br/>(key\_id / algorithm / digest). Null when DNSSEC is disabled or Bunny has<br/>not yet published DS values. |
+| <a name="output_ds_record"></a> [ds\_record](#output\_ds\_record) | DS record when DNSSEC is ready (key\_id / algorithm / digest with Scaleway-style<br/>enum strings). Null when DNSSEC is disabled or DS values are not yet published. |
 | <a name="output_mx_record_ids"></a> [mx\_record\_ids](#output\_mx\_record\_ids) | Map of MX record keys to Bunny.net record IDs |
 | <a name="output_nameserver1"></a> [nameserver1](#output\_nameserver1) | Primary nameserver for the DNS zone |
 | <a name="output_nameserver2"></a> [nameserver2](#output\_nameserver2) | Secondary nameserver for the DNS zone |

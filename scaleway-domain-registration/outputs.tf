@@ -23,9 +23,9 @@ output "auto_renew" {
   value       = scaleway_domain_registration.this.auto_renew
 }
 
-output "dnssec_enabled" {
-  description = "Whether DNSSEC is requested via this module."
-  value       = var.dnssec_enabled
+output "dnssec" {
+  description = "DNSSEC flag reported by the registration resource (not managed by this module)."
+  value       = scaleway_domain_registration.this.dnssec
 }
 
 output "owner_contact_id" {
@@ -48,7 +48,7 @@ output "technical_contact" {
   value       = scaleway_domain_registration.this.technical_contact
 }
 
-output "dnssec_ds_record" {
-  description = "DS record reported by the Scaleway registration resource (may lag API enable)."
+output "ds_record" {
+  description = "DS record reported by the registration resource (not managed by this module)."
   value       = scaleway_domain_registration.this.ds_record
 }

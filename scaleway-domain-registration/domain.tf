@@ -7,7 +7,7 @@ resource "scaleway_domain_registration" "this" {
   domain_names      = [var.domain]
   duration_in_years = var.duration_in_years
   auto_renew        = var.auto_renew
-  # Keep provider DNSSEC off; custom DS is applied in dnssec.tf via the API.
+  # DNSSEC is managed outside this module (e.g. console); do not reconcile it.
   dnssec = false
 
   project_id = var.project_id
@@ -39,11 +39,9 @@ resource "scaleway_domain_registration" "this" {
     }
   }
 
-  # Contact/DNSSEC are not safely updated in-place by this resource:
-  # - registrant changes need a Scaleway domain trade (TradeDomain)
-  # - custom DS is applied via null_resource + registrar API; the provider
-  #   field must stay false in config or every apply turns DNSSEC off after
-  #   the API has enabled it. Sync contacts with refresh-only if needed.
+  # - Registrant changes need a Scaleway domain trade (TradeDomain).
+  # - DNSSEC is intentionally ignored so it can be set manually without
+  #   Terraform flipping it on every apply. Sync contacts with refresh-only if needed.
   lifecycle {
     ignore_changes = [
       owner_contact,

@@ -25,9 +25,8 @@ output "dnssec_enabled" {
 
 output "ds_record" {
   description = <<-EOT
-    DS record shaped for scaleway-domain-registration's ds_record input
-    (key_id / algorithm / digest). Null when DNSSEC is disabled or Bunny has
-    not yet published DS values.
+    DS record when DNSSEC is ready (key_id / algorithm / digest with Scaleway-style
+    enum strings). Null when DNSSEC is disabled or DS values are not yet published.
   EOT
   value = local.dnssec_ready ? {
     key_id    = bunnynet_dns_zone.this.dnssec_keytag

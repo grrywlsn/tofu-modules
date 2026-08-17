@@ -14,7 +14,7 @@ Each top-level directory with a `versions.tf` is a versioned module. Current mod
 | `scaleway-kubernetes` | Kapsule cluster with Flux bootstrap |
 | `scaleway-opensearch` | Managed OpenSearch deployment |
 | `scaleway-network` | VPC and private network |
-| `scaleway-domain-registration` | Scaleway registrar domain (optional external DS / DNSSEC) |
+| `scaleway-domain-registration` | Scaleway registrar domain |
 | `scaleway-transactional-email` | Transactional email (TEM) domain |
 
 ## Prerequisites
