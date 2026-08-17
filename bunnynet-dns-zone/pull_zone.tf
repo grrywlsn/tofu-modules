@@ -1,7 +1,6 @@
 locals {
   pull_zones = {
-    for idx, zone in var.pull_zones :
-    "${zone.record_name}-${idx}" => zone
+    for zone in var.pull_zones : zone.name => zone
   }
 
   pull_zone_middleware = {
@@ -9,26 +8,22 @@ locals {
     if zone.middleware != null && trimspace(coalesce(zone.middleware, "")) != ""
   }
 
-  pull_zone_cnames = {
+  # Keyed by hostname; record_names are validated unique across all pull zones.
+  pull_zone_records = {
     for rec in flatten([
-      for k, zone in local.pull_zones : concat(
-        [{ key = "${k}-apex", zone_key = k, name = zone.record_name }],
-        zone.wildcard ? [{ key = "${k}-wildcard", zone_key = k, name = "*.${zone.record_name}" }] : []
-      )
-      ]) : rec.key => {
-      zone_key = rec.zone_key
-      name     = rec.name
-    }
+      for k, zone in local.pull_zones : [
+        for record_name in zone.record_names : {
+          zone_key    = k
+          record_name = record_name
+          hostname    = record_name != "" ? "${record_name}.${var.domain}" : var.domain
+        }
+      ]
+    ]) : rec.hostname => rec
   }
 
   pull_zone_hostnames = {
-    for k, zone in local.pull_zones : k => zone
-    if zone.hostnames
-  }
-
-  pull_zone_wildcard_hostnames = {
-    for k, zone in local.pull_zones : k => zone
-    if zone.hostnames && zone.wildcard
+    for k, rec in local.pull_zone_records : k => rec
+    if local.pull_zones[rec.zone_key].create_hostnames
   }
 }
 
@@ -69,36 +64,25 @@ resource "bunnynet_pullzone" "this" {
 }
 
 resource "bunnynet_dns_record" "pull_zone_cname" {
-  for_each = local.pull_zone_cnames
+  for_each = local.pull_zone_records
 
   zone = bunnynet_dns_zone.this.id
-  name = each.value.name
+  name = each.value.record_name
   type = "CNAME"
-  # cdn_domain is the parent (e.g. b-cdn.net); custom hostnames must CNAME to
-  # {pullzone_name}.{cdn_domain} (e.g. mastodon-site-cdn.b-cdn.net).
+  # cdn_domain is the shared parent (e.g. b-cdn.net); records must point at the
+  # pull zone's own hostname below it.
   value       = "${bunnynet_pullzone.this[each.value.zone_key].name}.${bunnynet_pullzone.this[each.value.zone_key].cdn_domain}"
   accelerated = false
 }
 
-resource "bunnynet_pullzone_hostname" "record" {
+resource "bunnynet_pullzone_hostname" "this" {
   for_each = local.pull_zone_hostnames
 
-  pullzone    = bunnynet_pullzone.this[each.key].id
-  name        = "${each.value.record_name}.${var.domain}"
-  tls_enabled = each.value.tls
-  force_ssl   = each.value.force_ssl
+  pullzone    = bunnynet_pullzone.this[each.value.zone_key].id
+  name        = each.value.hostname
+  tls_enabled = local.pull_zones[each.value.zone_key].tls
+  force_ssl   = local.pull_zones[each.value.zone_key].force_ssl
 
   # Bunny validates that live DNS already points at the pull zone.
-  depends_on = [bunnynet_dns_record.pull_zone_cname]
-}
-
-resource "bunnynet_pullzone_hostname" "wildcard" {
-  for_each = local.pull_zone_wildcard_hostnames
-
-  pullzone    = bunnynet_pullzone.this[each.key].id
-  name        = "*.${each.value.record_name}.${var.domain}"
-  tls_enabled = each.value.tls
-  force_ssl   = each.value.force_ssl
-
   depends_on = [bunnynet_dns_record.pull_zone_cname]
 }

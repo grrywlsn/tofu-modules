@@ -86,21 +86,22 @@ variable "shield" {
 variable "pull_zones" {
   description = <<-EOT
     Explicit Bunny pull zones attached to this DNS zone. Distinct from record-level
-    cdn = true (CDN Acceleration). Each entry creates a pull zone, TLS hostnames,
-    and CNAME records (record_name and optionally *.record_name) pointing at the
-    pull zone cdn_domain. Do not also list those names in cname_records.
-    Set middleware to a Bunny compute script (type middleware) that rewrites
-    origin requests. Shield/WAF is not enabled for these pull zones.
+    cdn = true (CDN Acceleration). Each entry creates a pull zone and, for every
+    record_names entry, a CNAME pointing at the pull zone plus a matching pull zone
+    hostname. Record names are relative to the zone: use "" for the apex and a
+    leading "*." for wildcards (e.g. ["assets", "*.assets"]). Do not also list those
+    names in a_records or cname_records.
+    Set middleware to a Bunny compute script (type middleware) that rewrites origin
+    requests. Shield/WAF is not enabled for these pull zones.
   EOT
   type = list(object({
-    name        = string
-    record_name = string
-    origin_url  = string
-    wildcard    = optional(bool, true)
-    # Create pull-zone hostnames only after DNS for record_name / *.record_name
-    # already resolves to the pull zone cdn_domain (Bunny NS live, or temporary
-    # CNAMEs at the current DNS provider). Bunny rejects hostnames otherwise.
-    hostnames             = optional(bool, true)
+    name         = string
+    origin_url   = string
+    record_names = list(string)
+    # Bunny validates that live DNS already resolves to the pull zone before it will
+    # attach a hostname or issue a certificate. Set false for the first apply so the
+    # CNAMEs are created, then true once they have propagated.
+    create_hostnames      = optional(bool, true)
     middleware            = optional(string)
     tls                   = optional(bool, true)
     force_ssl             = optional(bool, true)
@@ -129,34 +130,39 @@ variable "pull_zones" {
   }
 
   validation {
-    condition = alltrue([
-      for z in var.pull_zones :
-      length(trimspace(z.name)) > 0 && length(trimspace(z.record_name)) > 0
-    ])
-    error_message = "pull_zones name and record_name must be non-empty."
+    condition     = alltrue([for z in var.pull_zones : length(trimspace(z.name)) > 0])
+    error_message = "pull_zones name must be non-empty."
   }
 
   validation {
-    condition     = length(distinct([for z in var.pull_zones : z.record_name])) == length(var.pull_zones)
-    error_message = "pull_zones record_name values must be unique."
+    condition     = length(distinct([for z in var.pull_zones : z.name])) == length(var.pull_zones)
+    error_message = "pull_zones name values must be unique."
+  }
+
+  validation {
+    condition     = alltrue([for z in var.pull_zones : length(z.record_names) > 0])
+    error_message = "pull_zones record_names must contain at least one entry."
+  }
+
+  validation {
+    condition     = length(distinct(flatten([for z in var.pull_zones : z.record_names]))) == length(flatten([for z in var.pull_zones : z.record_names]))
+    error_message = "pull_zones record_names must be unique across all pull zones."
   }
 
   validation {
     condition = length(setintersection(
       toset([for r in var.cname_records : r.name]),
-      toset(flatten([
-        for z in var.pull_zones : z.wildcard ? [z.record_name, "*.${z.record_name}"] : [z.record_name]
-      ]))
+      toset(flatten([for z in var.pull_zones : z.record_names]))
     )) == 0
-    error_message = "pull_zones record_name (and *.record_name when wildcard) must not also appear in cname_records."
+    error_message = "pull_zones record_names must not also appear in cname_records."
   }
 
   validation {
     condition = length(setintersection(
       toset([for r in var.a_records : r.name]),
-      toset([for z in var.pull_zones : z.record_name])
+      toset(flatten([for z in var.pull_zones : z.record_names]))
     )) == 0
-    error_message = "pull_zones record_name must not also appear in a_records."
+    error_message = "pull_zones record_names must not also appear in a_records."
   }
 }
 
