@@ -93,10 +93,14 @@ variable "pull_zones" {
     origin requests. Shield/WAF is not enabled for these pull zones.
   EOT
   type = list(object({
-    name                  = string
-    record_name           = string
-    origin_url            = string
-    wildcard              = optional(bool, true)
+    name        = string
+    record_name = string
+    origin_url  = string
+    wildcard    = optional(bool, true)
+    # Create pull-zone hostnames only after DNS for record_name / *.record_name
+    # already resolves to the pull zone cdn_domain (Bunny NS live, or temporary
+    # CNAMEs at the current DNS provider). Bunny rejects hostnames otherwise.
+    hostnames             = optional(bool, true)
     middleware            = optional(string)
     tls                   = optional(bool, true)
     force_ssl             = optional(bool, true)
