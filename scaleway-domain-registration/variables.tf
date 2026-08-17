@@ -67,13 +67,22 @@ variable "auto_renew" {
   default     = true
 }
 
-variable "dnssec" {
+variable "dnssec_enabled" {
   description = <<-EOT
-    DS record to publish at the Scaleway registrar (typically from Bunny.net).
-    Set to a DS object to enable DNSSEC with those values; set to null to disable.
-    algorithm and digest.type use Scaleway enum strings (e.g. ecdsap256sha256, sha_256).
+    Whether to enable DNSSEC at the Scaleway registrar.
+    When true, dnssec_ds_record must be set. When false, dnssec_ds_record must be null.
     Applied via the Scaleway registrar API because the Terraform provider cannot
     pass a custom DS payload.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "dnssec_ds_record" {
+  description = <<-EOT
+    DS record to publish at the Scaleway registrar when dnssec_enabled is true.
+    Must be null when dnssec_enabled is false.
+    algorithm and digest.type use Scaleway enum strings (e.g. ecdsap256sha256, sha_256).
   EOT
   type = object({
     key_id    = number
@@ -85,6 +94,11 @@ variable "dnssec" {
   })
   nullable = true
   default  = null
+
+  validation {
+    condition     = var.dnssec_enabled ? var.dnssec_ds_record != null : var.dnssec_ds_record == null
+    error_message = "dnssec_ds_record must be set when dnssec_enabled is true, and must be null when dnssec_enabled is false."
+  }
 }
 
 variable "project_id" {
