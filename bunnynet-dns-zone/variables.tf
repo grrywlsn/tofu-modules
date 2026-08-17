@@ -111,6 +111,14 @@ variable "pull_zones" {
     cache_expiration_time_browser = optional(number)
     cache_vary                    = optional(list(string), [])
     cache_errors                  = optional(bool, false)
+    # Serve stale content while the origin is unreachable and/or while Bunny is
+    # refreshing the object. Empty disables stale serving.
+    cache_stale = optional(list(string), [])
+    # Optimize for large object delivery (cache slicing).
+    cache_chunked = optional(bool, false)
+    # Refresh expired objects in the background while continuing to serve the
+    # cached response.
+    use_background_update = optional(bool, false)
   }))
   default = []
 
@@ -120,6 +128,15 @@ variable "pull_zones" {
       startswith(z.origin_url, "http://") || startswith(z.origin_url, "https://")
     ])
     error_message = "pull_zones origin_url must start with http:// or https://."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pull_zones : alltrue([
+        for v in z.cache_stale : contains(["offline", "updating"], v)
+      ])
+    ])
+    error_message = "pull_zones cache_stale values must be offline and/or updating."
   }
 
   validation {
