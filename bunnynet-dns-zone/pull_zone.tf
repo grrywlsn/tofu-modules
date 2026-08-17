@@ -51,7 +51,8 @@ resource "bunnynet_pullzone" "this" {
   cache_vary            = toset(each.value.cache_vary)
 
   routing {
-    tier = "Standard"
+    tier    = "Standard"
+    filters = contains(keys(local.pull_zone_middleware), each.key) ? toset(["all", "scripting"]) : toset(["all"])
   }
 }
 
