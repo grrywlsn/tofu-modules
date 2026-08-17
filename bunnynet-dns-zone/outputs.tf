@@ -74,6 +74,16 @@ output "cname_shield_ids" {
   value       = { for k, r in bunnynet_pullzone_shield.cname : k => r.id }
 }
 
+output "pull_zone_ids" {
+  description = "Map of pull_zones keys to Bunny pull zone IDs"
+  value       = { for k, z in bunnynet_pullzone.this : k => z.id }
+}
+
+output "pull_zone_cdn_domains" {
+  description = "Map of pull_zones keys to their Bunny cdn_domain (CNAME target)"
+  value       = { for k, z in bunnynet_pullzone.this : k => z.cdn_domain }
+}
+
 output "txt_record_ids" {
   description = "Map of TXT record keys to Bunny.net record IDs"
   value       = { for k, r in bunnynet_dns_record.txt : k => r.id }

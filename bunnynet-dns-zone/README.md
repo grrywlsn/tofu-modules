@@ -66,6 +66,24 @@ Use `name = ""` for apex records. Record list variables default to `[]` (none).
 
 Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. SSL only validates once the domain's nameservers point at Bunny DNS.
 
+For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`. That creates an explicit pull zone, optional middleware, TLS hostnames, and CNAMEs (`record_name` and `*.record_name`) to the pull zone `cdn_domain`. Do not also list those names in `cname_records`. Wildcard Let's Encrypt certificates require the zone's nameservers to point at Bunny DNS.
+
+```hcl
+  pull_zones = [
+    {
+      name                  = "example-cdn"
+      record_name           = "cdn"
+      wildcard              = true
+      origin_url            = "http://origin.example.net"
+      middleware            = file("${path.module}/middleware.ts")
+      originshield_enabled  = true
+      originshield_zone     = "FR"
+      cache_expiration_time = 31536000
+      cache_vary            = ["hostname"]
+    },
+  ]
+```
+
 [Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium, WAF on/Block).
 
 ## DNSSEC
@@ -99,11 +117,16 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
+| [bunnynet_compute_script.pull_zone](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/compute_script) | resource |
 | [bunnynet_dns_record.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
 | [bunnynet_dns_record.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
 | [bunnynet_dns_record.mx](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.pull_zone_cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
 | [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
 | [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_zone) | resource |
+| [bunnynet_pullzone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone) | resource |
+| [bunnynet_pullzone_hostname.record](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_hostname) | resource |
+| [bunnynet_pullzone_hostname.wildcard](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_hostname) | resource |
 | [bunnynet_pullzone_shield.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
 | [bunnynet_pullzone_shield.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
 
@@ -116,6 +139,7 @@ No modules.
 | <a name="input_dnssec_enabled"></a> [dnssec\_enabled](#input\_dnssec\_enabled) | Whether DNSSEC is enabled for the zone | `bool` | `true` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name for the Bunny.net DNS zone (e.g. example.com) | `string` | n/a | yes |
 | <a name="input_mx_records"></a> [mx\_records](#input\_mx\_records) | MX records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name     = string<br/>    value    = string<br/>    priority = number<br/>    ttl      = optional(number)<br/>  }))</pre> | `[]` | no |
+| <a name="input_pull_zones"></a> [pull\_zones](#input\_pull\_zones) | Explicit Bunny pull zones attached to this DNS zone. Distinct from record-level<br/>cdn = true (CDN Acceleration). Each entry creates a pull zone, TLS hostnames,<br/>and CNAME records (record\_name and optionally *.record\_name) pointing at the<br/>pull zone cdn\_domain. Do not also list those names in cname\_records.<br/>Set middleware to a Bunny compute script (type middleware) that rewrites<br/>origin requests. Shield/WAF is not enabled for these pull zones. | <pre>list(object({<br/>    name                  = string<br/>    record_name           = string<br/>    origin_url            = string<br/>    wildcard              = optional(bool, true)<br/>    middleware            = optional(string)<br/>    tls                   = optional(bool, true)<br/>    force_ssl             = optional(bool, true)<br/>    originshield_enabled  = optional(bool, false)<br/>    originshield_zone     = optional(string)<br/>    cache_expiration_time = optional(number)<br/>    cache_vary            = optional(list(string), [])<br/>    cache_errors          = optional(bool, false)<br/>  }))</pre> | `[]` | no |
 | <a name="input_shield"></a> [shield](#input\_shield) | Defaults applied to Bunny Shield when CDN Acceleration is enabled for a<br/>record (unless that record sets shield = false).<br/>See https://bunny.net/docs/shield/ for plan tiers and options. | <pre>object({<br/>    tier       = optional(string, "Basic")<br/>    ddos_level = optional(string, "Medium")<br/>    waf        = optional(bool, true)<br/>    waf_mode   = optional(string, "Block")<br/>  })</pre> | `{}` | no |
 | <a name="input_txt_records"></a> [txt\_records](#input\_txt\_records) | TXT records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>    ttl   = optional(number)<br/>  }))</pre> | `[]` | no |
 
@@ -135,6 +159,8 @@ No modules.
 | <a name="output_mx_record_ids"></a> [mx\_record\_ids](#output\_mx\_record\_ids) | Map of MX record keys to Bunny.net record IDs |
 | <a name="output_nameserver1"></a> [nameserver1](#output\_nameserver1) | Primary nameserver for the DNS zone |
 | <a name="output_nameserver2"></a> [nameserver2](#output\_nameserver2) | Secondary nameserver for the DNS zone |
+| <a name="output_pull_zone_cdn_domains"></a> [pull\_zone\_cdn\_domains](#output\_pull\_zone\_cdn\_domains) | Map of pull\_zones keys to their Bunny cdn\_domain (CNAME target) |
+| <a name="output_pull_zone_ids"></a> [pull\_zone\_ids](#output\_pull\_zone\_ids) | Map of pull\_zones keys to Bunny pull zone IDs |
 | <a name="output_txt_record_ids"></a> [txt\_record\_ids](#output\_txt\_record\_ids) | Map of TXT record keys to Bunny.net record IDs |
 | <a name="output_zone_id"></a> [zone\_id](#output\_zone\_id) | Bunny.net DNS zone ID |
 <!-- END_TF_DOCS -->
