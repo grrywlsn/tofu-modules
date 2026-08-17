@@ -51,9 +51,10 @@ resource "bunnynet_pullzone" "this" {
   originshield_enabled = each.value.originshield_enabled
   originshield_zone    = each.value.originshield_enabled ? each.value.originshield_zone : null
 
-  cache_errors          = each.value.cache_errors
-  cache_expiration_time = each.value.cache_expiration_time
-  cache_vary            = toset(each.value.cache_vary)
+  cache_errors                  = each.value.cache_errors
+  cache_expiration_time         = each.value.cache_expiration_time
+  cache_expiration_time_browser = each.value.cache_expiration_time_browser
+  cache_vary                    = toset(each.value.cache_vary)
 
   routing {
     tier = "Standard"

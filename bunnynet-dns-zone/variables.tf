@@ -101,15 +101,16 @@ variable "pull_zones" {
     # Bunny validates that live DNS already resolves to the pull zone before it will
     # attach a hostname or issue a certificate. Set false for the first apply so the
     # CNAMEs are created, then true once they have propagated.
-    create_hostnames      = optional(bool, true)
-    middleware            = optional(string)
-    tls                   = optional(bool, true)
-    force_ssl             = optional(bool, true)
-    originshield_enabled  = optional(bool, false)
-    originshield_zone     = optional(string)
-    cache_expiration_time = optional(number)
-    cache_vary            = optional(list(string), [])
-    cache_errors          = optional(bool, false)
+    create_hostnames              = optional(bool, true)
+    middleware                    = optional(string)
+    tls                           = optional(bool, true)
+    force_ssl                     = optional(bool, true)
+    originshield_enabled          = optional(bool, false)
+    originshield_zone             = optional(string)
+    cache_expiration_time         = optional(number)
+    cache_expiration_time_browser = optional(number)
+    cache_vary                    = optional(list(string), [])
+    cache_errors                  = optional(bool, false)
   }))
   default = []
 
