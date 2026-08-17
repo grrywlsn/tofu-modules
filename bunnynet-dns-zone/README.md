@@ -68,19 +68,39 @@ Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bu
 
 [Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium, WAF on/Block).
 
+## DNSSEC / Scaleway registrar
+
+When `dnssec_enabled = true`, the module exposes:
+
+- `dnssec_enabled` — whether Bunny has DNSSEC on
+- `ds_record` — object matching [`scaleway-domain-registration`](../scaleway-domain-registration)’s `ds_record` input (`key_id`, `algorithm`, `digest`), or `null` until Bunny publishes DS values
+
+Example Terragrunt wiring:
+
+```hcl
+dependency "dns" {
+  config_path = "../../../../bunny/dns-zones/example.com"
+}
+
+inputs = {
+  dnssec    = dependency.dns.outputs.dnssec_enabled && dependency.dns.outputs.ds_record != null
+  ds_record = dependency.dns.outputs.ds_record
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
-| <a name="requirement_bunnynet"></a> [bunnynet](#requirement\_bunnynet) | 0.15.1 |
+| <a name="requirement_bunnynet"></a> [bunnynet](#requirement\_bunnynet) | 0.18.0 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_bunnynet"></a> [bunnynet](#provider\_bunnynet) | 0.15.1 |
+| <a name="provider_bunnynet"></a> [bunnynet](#provider\_bunnynet) | 0.18.0 |
 
 ## Modules
 
@@ -90,30 +110,39 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
-| [bunnynet_dns_record.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.15.1/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.15.1/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.mx](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.15.1/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.15.1/docs/resources/dns_record) | resource |
-| [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.15.1/docs/resources/dns_zone) | resource |
+| [bunnynet_dns_record.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.mx](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
+| [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_zone) | resource |
+| [bunnynet_pullzone_shield.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
+| [bunnynet_pullzone_shield.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_a_records"></a> [a\_records](#input\_a\_records) | A records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>    ttl   = optional(number)<br/>  }))</pre> | `[]` | no |
-| <a name="input_cname_records"></a> [cname\_records](#input\_cname\_records) | CNAME records to create. Empty list creates none. | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>    ttl   = optional(number)<br/>  }))</pre> | `[]` | no |
+| <a name="input_a_records"></a> [a\_records](#input\_a\_records) | A records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it. | <pre>list(object({<br/>    name   = string<br/>    value  = string<br/>    ttl    = optional(number)<br/>    cdn    = optional(bool, false)<br/>    shield = optional(bool)<br/>  }))</pre> | `[]` | no |
+| <a name="input_cname_records"></a> [cname\_records](#input\_cname\_records) | CNAME records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it. | <pre>list(object({<br/>    name   = string<br/>    value  = string<br/>    ttl    = optional(number)<br/>    cdn    = optional(bool, false)<br/>    shield = optional(bool)<br/>  }))</pre> | `[]` | no |
 | <a name="input_dnssec_enabled"></a> [dnssec\_enabled](#input\_dnssec\_enabled) | Whether DNSSEC is enabled for the zone | `bool` | `true` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name for the Bunny.net DNS zone (e.g. example.com) | `string` | n/a | yes |
 | <a name="input_mx_records"></a> [mx\_records](#input\_mx\_records) | MX records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name     = string<br/>    value    = string<br/>    priority = number<br/>    ttl      = optional(number)<br/>  }))</pre> | `[]` | no |
+| <a name="input_shield"></a> [shield](#input\_shield) | Defaults applied to Bunny Shield when CDN Acceleration is enabled for a<br/>record (unless that record sets shield = false).<br/>See https://bunny.net/docs/shield/ for plan tiers and options. | <pre>object({<br/>    tier       = optional(string, "Basic")<br/>    ddos_level = optional(string, "Medium")<br/>    waf        = optional(bool, true)<br/>    waf_mode   = optional(string, "Block")<br/>  })</pre> | `{}` | no |
 | <a name="input_txt_records"></a> [txt\_records](#input\_txt\_records) | TXT records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>    ttl   = optional(number)<br/>  }))</pre> | `[]` | no |
 
 ## Outputs
 
 | Name | Description |
 | ---- | ----------- |
+| <a name="output_a_cdn_pullzone_ids"></a> [a\_cdn\_pullzone\_ids](#output\_a\_cdn\_pullzone\_ids) | Map of A record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs |
 | <a name="output_a_record_ids"></a> [a\_record\_ids](#output\_a\_record\_ids) | Map of A record keys to Bunny.net record IDs |
+| <a name="output_a_shield_ids"></a> [a\_shield\_ids](#output\_a\_shield\_ids) | Map of A record keys with Bunny Shield enabled to their Shield IDs |
+| <a name="output_cname_cdn_pullzone_ids"></a> [cname\_cdn\_pullzone\_ids](#output\_cname\_cdn\_pullzone\_ids) | Map of CNAME record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs |
 | <a name="output_cname_record_ids"></a> [cname\_record\_ids](#output\_cname\_record\_ids) | Map of CNAME record keys to Bunny.net record IDs |
+| <a name="output_cname_shield_ids"></a> [cname\_shield\_ids](#output\_cname\_shield\_ids) | Map of CNAME record keys with Bunny Shield enabled to their Shield IDs |
+| <a name="output_dnssec_enabled"></a> [dnssec\_enabled](#output\_dnssec\_enabled) | Whether DNSSEC is enabled on the Bunny.net DNS zone |
 | <a name="output_domain"></a> [domain](#output\_domain) | Domain name of the DNS zone |
+| <a name="output_ds_record"></a> [ds\_record](#output\_ds\_record) | DS record shaped for scaleway-domain-registration's ds\_record input<br/>(key\_id / algorithm / digest). Null when DNSSEC is disabled or Bunny has<br/>not yet published DS values. |
 | <a name="output_mx_record_ids"></a> [mx\_record\_ids](#output\_mx\_record\_ids) | Map of MX record keys to Bunny.net record IDs |
 | <a name="output_nameserver1"></a> [nameserver1](#output\_nameserver1) | Primary nameserver for the DNS zone |
 | <a name="output_nameserver2"></a> [nameserver2](#output\_nameserver2) | Secondary nameserver for the DNS zone |
