@@ -58,6 +58,8 @@ resource "bunnynet_pullzone" "this" {
   cache_stale                   = toset(each.value.cache_stale)
   cache_chunked                 = each.value.cache_chunked
   use_background_update         = each.value.use_background_update
+  request_coalescing_enabled    = each.value.request_coalescing_enabled
+  request_coalescing_timeout    = each.value.request_coalescing_timeout
 
   routing {
     tier = "Standard"
