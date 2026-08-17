@@ -1,12 +1,16 @@
 locals {
   a_records = {
     for idx, record in var.a_records :
-    "${record.name != "" ? record.name : "@"}-${record.value}-${idx}" => record
+    "${record.name != "" ? record.name : "@"}-${record.value}-${idx}" => merge(record, {
+      shield = record.cdn && coalesce(record.shield, true)
+    })
   }
 
   cname_records = {
     for idx, record in var.cname_records :
-    "${record.name}-${record.value}-${idx}" => record
+    "${record.name != "" ? record.name : "@"}-${record.value}-${idx}" => merge(record, {
+      shield = record.cdn && coalesce(record.shield, true)
+    })
   }
 
   txt_records = {
@@ -23,21 +27,23 @@ locals {
 resource "bunnynet_dns_record" "a" {
   for_each = local.a_records
 
-  zone  = bunnynet_dns_zone.this.id
-  name  = each.value.name
-  type  = "A"
-  value = each.value.value
-  ttl   = each.value.ttl
+  zone        = bunnynet_dns_zone.this.id
+  name        = each.value.name
+  type        = "A"
+  value       = each.value.value
+  ttl         = each.value.ttl
+  accelerated = each.value.cdn
 }
 
 resource "bunnynet_dns_record" "cname" {
   for_each = local.cname_records
 
-  zone  = bunnynet_dns_zone.this.id
-  name  = each.value.name
-  type  = "CNAME"
-  value = each.value.value
-  ttl   = each.value.ttl
+  zone        = bunnynet_dns_zone.this.id
+  name        = each.value.name
+  type        = "CNAME"
+  value       = each.value.value
+  ttl         = each.value.ttl
+  accelerated = each.value.cdn
 }
 
 resource "bunnynet_dns_record" "txt" {

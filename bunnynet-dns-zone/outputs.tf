@@ -28,6 +28,32 @@ output "cname_record_ids" {
   value       = { for k, r in bunnynet_dns_record.cname : k => r.id }
 }
 
+output "a_cdn_pullzone_ids" {
+  description = "Map of A record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs"
+  value = {
+    for k, r in bunnynet_dns_record.a : k => r.accelerated_pullzone
+    if r.accelerated
+  }
+}
+
+output "cname_cdn_pullzone_ids" {
+  description = "Map of CNAME record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs"
+  value = {
+    for k, r in bunnynet_dns_record.cname : k => r.accelerated_pullzone
+    if r.accelerated
+  }
+}
+
+output "a_shield_ids" {
+  description = "Map of A record keys with Bunny Shield enabled to their Shield IDs"
+  value       = { for k, r in bunnynet_pullzone_shield.a : k => r.id }
+}
+
+output "cname_shield_ids" {
+  description = "Map of CNAME record keys with Bunny Shield enabled to their Shield IDs"
+  value       = { for k, r in bunnynet_pullzone_shield.cname : k => r.id }
+}
+
 output "txt_record_ids" {
   description = "Map of TXT record keys to Bunny.net record IDs"
   value       = { for k, r in bunnynet_dns_record.txt : k => r.id }
