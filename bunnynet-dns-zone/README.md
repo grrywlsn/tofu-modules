@@ -89,6 +89,23 @@ For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`
 
 Bunny refuses to attach a hostname until live DNS already resolves to the pull zone, so a brand new zone needs two applies: set `create_hostnames = false` first to publish the CNAMEs, then flip it to `true` once they have propagated.
 
+### Upgrading from v1.6.x
+
+`pull_zones` no longer takes `record_name` / `wildcard` / `hostnames`. Replace them with `record_names` (list) and `create_hostnames`:
+
+```hcl
+# before
+record_name = "cdn"
+wildcard    = true
+hostnames   = true
+
+# after
+record_names     = ["cdn", "*.cdn"]
+create_hostnames = true
+```
+
+Pull zone resources are also re-keyed by pull zone name and hostname, so existing callers should `tofu state mv` before applying or the pull zone will be recreated.
+
 [Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium, WAF on/Block).
 
 ## DNSSEC
