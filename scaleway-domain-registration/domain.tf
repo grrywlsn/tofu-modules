@@ -39,13 +39,16 @@ resource "scaleway_domain_registration" "this" {
     }
   }
 
-  # Registrant changes require a Scaleway domain trade (TradeDomain), not an
-  # in-place UpdateDomain. Ignore after create so imported / drifted contacts
-  # do not fail apply; sync with `tofu apply -refresh-only` if needed.
+  # Contact/DNSSEC are not safely updated in-place by this resource:
+  # - registrant changes need a Scaleway domain trade (TradeDomain)
+  # - custom Bunny DS is applied via null_resource + registrar API; the
+  #   provider field must stay false in config or every apply turns DNSSEC off
+  #   after the API has enabled it. Sync contacts with refresh-only if needed.
   lifecycle {
     ignore_changes = [
       owner_contact,
       owner_contact_id,
+      dnssec,
     ]
   }
 }
