@@ -4,7 +4,7 @@ OpenTofu module to manage a [Scaleway domain registration](https://registry.terr
 
 DNS for the domain can be managed outside Scaleway. When the authoritative DNS publishes DS data, set `dnssec_enabled = true` and pass that DS into `dnssec_ds_record` so it is published at Scaleway’s registrar.
 
-The Scaleway Terraform provider cannot set a custom DS record (`ds_record` is computed-only). This module calls the Scaleway registrar API (`enable-dnssec` / `disable-dnssec`) with `SCW_SECRET_KEY` from the environment.
+The Scaleway Terraform provider cannot set a custom DS record (`ds_record` is computed-only). This module calls the Scaleway registrar API (`enable-dnssec` / `disable-dnssec`) using `SCW_SECRET_KEY` from the environment (or `scw config` as a fallback). The API key needs Domains permissions sufficient to manage DNSSEC on the domain.
 
 ## Example
 
