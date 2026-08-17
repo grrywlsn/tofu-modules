@@ -55,6 +55,9 @@ resource "bunnynet_pullzone" "this" {
   cache_expiration_time         = each.value.cache_expiration_time
   cache_expiration_time_browser = each.value.cache_expiration_time_browser
   cache_vary                    = toset(each.value.cache_vary)
+  cache_stale                   = toset(each.value.cache_stale)
+  cache_chunked                 = each.value.cache_chunked
+  use_background_update         = each.value.use_background_update
 
   routing {
     tier = "Standard"
