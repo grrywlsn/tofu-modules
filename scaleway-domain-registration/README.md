@@ -2,7 +2,7 @@
 
 OpenTofu module to manage a [Scaleway domain registration](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/domain_registration) (one domain per instance).
 
-DNS for the domain can live elsewhere (for example [Bunny.net](https://bunny.net/) via `bunnynet-dns-zone`). Set `dnssec` to that module’s `ds_record` output to enable DNSSEC at Scaleway with those DS values; set `dnssec = null` to disable.
+DNS for the domain can be managed outside Scaleway. When the authoritative DNS publishes DS data, set `dnssec_enabled = true` and pass that DS into `dnssec_ds_record` so it is published at Scaleway’s registrar.
 
 The Scaleway Terraform provider cannot set a custom DS record (`ds_record` is computed-only). This module calls the Scaleway registrar API (`enable-dnssec` / `disable-dnssec`) with `SCW_SECRET_KEY` from the environment.
 
@@ -44,7 +44,7 @@ module "domain" {
 
 If both `owner_contact_id` and `owner_contact` are set, the ID is used.
 
-### With Bunny DNSSEC (DS at Scaleway)
+### With DNSSEC (external DS)
 
 ```hcl
 module "domain" {
@@ -53,24 +53,19 @@ module "domain" {
   domain           = "example.com"
   owner_contact_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
-  # Non-null enables DNSSEC with these DS values; null disables.
-  dnssec = module.dns.ds_record
+  dnssec_enabled = true
+  dnssec_ds_record = {
+    key_id    = 12345
+    algorithm = "ecdsap256sha256"
+    digest = {
+      type   = "sha_256"
+      digest = "..."
+    }
+  }
 }
 ```
 
-Terragrunt:
-
-```hcl
-dependency "dns" {
-  config_path = "../../../../bunny/dns-zones/example.com"
-}
-
-inputs = {
-  dnssec = dependency.dns.outputs.ds_record
-}
-```
-
-Map Bunny algorithm / digest type codes to Scaleway enum strings when needed (for example `13` → `ecdsap256sha256`, `2` → `sha_256`). The `bunnynet-dns-zone` `ds_record` output already uses Scaleway enums.
+Use Scaleway enum strings for `algorithm` and `digest.type` (for example `ecdsap256sha256`, `sha_256`).
 
 ## Import
 
@@ -116,7 +111,8 @@ No modules.
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_auto_renew"></a> [auto\_renew](#input\_auto\_renew) | Whether to enable auto-renewal for the domain. | `bool` | `true` | no |
-| <a name="input_dnssec"></a> [dnssec](#input\_dnssec) | DS record to publish at the Scaleway registrar (typically from Bunny.net).<br/>Set to a DS object to enable DNSSEC with those values; set to null to disable.<br/>algorithm and digest.type use Scaleway enum strings (e.g. ecdsap256sha256, sha\_256).<br/>Applied via the Scaleway registrar API because the Terraform provider cannot<br/>pass a custom DS payload. | <pre>object({<br/>    key_id    = number<br/>    algorithm = string<br/>    digest = object({<br/>      type   = string<br/>      digest = string<br/>    })<br/>  })</pre> | `null` | no |
+| <a name="input_dnssec_ds_record"></a> [dnssec\_ds\_record](#input\_dnssec\_ds\_record) | DS record to publish at the Scaleway registrar when dnssec\_enabled is true.<br/>Must be null when dnssec\_enabled is false.<br/>algorithm and digest.type use Scaleway enum strings (e.g. ecdsap256sha256, sha\_256). | <pre>object({<br/>    key_id    = number<br/>    algorithm = string<br/>    digest = object({<br/>      type   = string<br/>      digest = string<br/>    })<br/>  })</pre> | `null` | no |
+| <a name="input_dnssec_enabled"></a> [dnssec\_enabled](#input\_dnssec\_enabled) | Whether to enable DNSSEC at the Scaleway registrar.<br/>When true, dnssec\_ds\_record must be set. When false, dnssec\_ds\_record must be null.<br/>Applied via the Scaleway registrar API because the Terraform provider cannot<br/>pass a custom DS payload. | `bool` | `false` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name to register or manage (e.g. example.com). One domain per module instance. | `string` | n/a | yes |
 | <a name="input_duration_in_years"></a> [duration\_in\_years](#input\_duration\_in\_years) | Registration period in years (used when purchasing a new domain). | `number` | `1` | no |
 | <a name="input_owner_contact"></a> [owner\_contact](#input\_owner\_contact) | Owner contact details for the domain registration.<br/>Used when owner\_contact\_id is null.<br/>At least one of owner\_contact\_id or owner\_contact must be set. | <pre>object({<br/>    legal_form                  = string<br/>    firstname                   = string<br/>    lastname                    = string<br/>    email                       = string<br/>    phone_number                = string<br/>    address_line_1              = string<br/>    zip                         = string<br/>    city                        = string<br/>    country                     = string<br/>    address_line_2              = optional(string)<br/>    state                       = optional(string)<br/>    company_name                = optional(string)<br/>    email_alt                   = optional(string)<br/>    fax_number                  = optional(string)<br/>    vat_identification_code     = optional(string)<br/>    company_identification_code = optional(string)<br/>    lang                        = optional(string)<br/>    whois_opt_in                = optional(bool)<br/>    resale                      = optional(bool)<br/>  })</pre> | `null` | no |
@@ -129,9 +125,9 @@ No modules.
 | ---- | ----------- |
 | <a name="output_administrative_contact"></a> [administrative\_contact](#output\_administrative\_contact) | Administrative contact details returned by Scaleway. |
 | <a name="output_auto_renew"></a> [auto\_renew](#output\_auto\_renew) | Whether auto-renewal is enabled on the registration resource. |
-| <a name="output_dnssec"></a> [dnssec](#output\_dnssec) | Whether DNSSEC is requested via this module (var.dnssec is non-null). |
+| <a name="output_dnssec_ds_record"></a> [dnssec\_ds\_record](#output\_dnssec\_ds\_record) | DS record reported by the Scaleway registration resource (may lag API enable). |
+| <a name="output_dnssec_enabled"></a> [dnssec\_enabled](#output\_dnssec\_enabled) | Whether DNSSEC is requested via this module. |
 | <a name="output_domain"></a> [domain](#output\_domain) | Managed domain name. |
-| <a name="output_ds_record"></a> [ds\_record](#output\_ds\_record) | DS record reported by the Scaleway registration resource (may lag API enable). |
 | <a name="output_id"></a> [id](#output\_id) | ID of the domain registration (project\_id/task\_id). |
 | <a name="output_owner_contact"></a> [owner\_contact](#output\_owner\_contact) | Owner contact details on the registration. |
 | <a name="output_owner_contact_id"></a> [owner\_contact\_id](#output\_owner\_contact\_id) | Owner contact ID assigned by Scaleway. |

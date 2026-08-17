@@ -7,7 +7,7 @@ resource "scaleway_domain_registration" "this" {
   domain_names      = [var.domain]
   duration_in_years = var.duration_in_years
   auto_renew        = var.auto_renew
-  # Keep provider DNSSEC off; custom DS (Bunny) is applied in dnssec.tf via the API.
+  # Keep provider DNSSEC off; custom DS is applied in dnssec.tf via the API.
   dnssec = false
 
   project_id = var.project_id
@@ -41,9 +41,9 @@ resource "scaleway_domain_registration" "this" {
 
   # Contact/DNSSEC are not safely updated in-place by this resource:
   # - registrant changes need a Scaleway domain trade (TradeDomain)
-  # - custom Bunny DS is applied via null_resource + registrar API; the
-  #   provider field must stay false in config or every apply turns DNSSEC off
-  #   after the API has enabled it. Sync contacts with refresh-only if needed.
+  # - custom DS is applied via null_resource + registrar API; the provider
+  #   field must stay false in config or every apply turns DNSSEC off after
+  #   the API has enabled it. Sync contacts with refresh-only if needed.
   lifecycle {
     ignore_changes = [
       owner_contact,

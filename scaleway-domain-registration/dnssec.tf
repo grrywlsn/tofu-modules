@@ -1,18 +1,14 @@
-# Desired DNSSEC state: non-null var.dnssec enables with that DS; null disables.
+# Desired DNSSEC state comes from dnssec_enabled + dnssec_ds_record.
 # The scaleway_domain_registration resource cannot set a custom DS (computed-only),
 # so we call the registrar API:
 # POST /domain/v2beta1/domains/{domain}/enable-dnssec|disable-dnssec
-locals {
-  dnssec_enabled = var.dnssec != null
-}
-
 resource "null_resource" "dnssec" {
   depends_on = [scaleway_domain_registration.this]
 
   triggers = {
     domain         = var.domain
-    dnssec_enabled = tostring(local.dnssec_enabled)
-    ds_record      = local.dnssec_enabled ? jsonencode(var.dnssec) : ""
+    dnssec_enabled = tostring(var.dnssec_enabled)
+    ds_record      = var.dnssec_enabled ? jsonencode(var.dnssec_ds_record) : ""
   }
 
   provisioner "local-exec" {
@@ -20,7 +16,7 @@ resource "null_resource" "dnssec" {
     environment = {
       SCW_DOMAIN         = self.triggers.domain
       SCW_DNSSEC_ENABLED = self.triggers.dnssec_enabled
-      # triggers.ds_record is jsonencode(var.dnssec); wrap for the API body.
+      # triggers.ds_record is jsonencode(var.dnssec_ds_record); wrap for the API body.
       SCW_DS_JSON = self.triggers.ds_record != "" ? "{\"ds_record\":${self.triggers.ds_record}}" : ""
     }
     interpreter = ["/bin/bash", "-c"]
