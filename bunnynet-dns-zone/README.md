@@ -14,6 +14,8 @@ module "dns" {
     {
       name  = ""
       value = "192.0.2.10"
+      # CDN Acceleration (+ Shield by default) + Let's Encrypt cert
+      cdn = true
     },
     {
       name  = "www"
@@ -27,7 +29,22 @@ module "dns" {
       name  = "cdn"
       value = "cdn.example.net"
     },
+    {
+      name   = "app"
+      value  = "origin.example.net"
+      cdn    = true
+      shield = false # CDN without Bunny Shield
+    },
   ]
+
+  # Optional defaults for CDN-accelerated records (Shield on by default)
+  # shield = {
+  #   tier       = "Basic"
+  #   ddos_level = "Medium"
+  #   ddos_mode  = "Block"
+  #   waf        = true
+  #   waf_mode   = "Block"
+  # }
 
   txt_records = [
     {
@@ -47,6 +64,10 @@ module "dns" {
 ```
 
 Use `name = ""` for apex records. Record list variables default to `[]` (none).
+
+Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. SSL only validates once the domain's nameservers point at Bunny DNS.
+
+[Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium/Block, WAF on/Block).
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
