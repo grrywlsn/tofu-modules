@@ -16,7 +16,8 @@ variable "a_records" {
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
     CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
-    set on the record (including [] to attach none).
+    set on the record (including [] to attach none). Bunny manages the origin
+    scheme for the automatically-created CDN Acceleration pull zone.
   EOT
   type = list(object({
     name   = string
@@ -67,7 +68,8 @@ variable "cname_records" {
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
     CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
-    set on the record (including [] to attach none).
+    set on the record (including [] to attach none). Bunny manages the origin
+    scheme for the automatically-created CDN Acceleration pull zone.
   EOT
   type = list(object({
     name   = string
@@ -208,12 +210,14 @@ variable "pull_zones" {
     leading "*." for wildcards (e.g. ["assets", "*.assets"]). Do not also list those
     names in a_records or cname_records.
     Set middleware to a Bunny compute script (type middleware) that rewrites origin
-    requests. Shield/WAF is not enabled for these pull zones.
+    requests. Shield/WAF is not enabled for these pull zones. origin_url must be
+    https:// unless origin_http = true.
   EOT
   type = list(object({
     name         = string
     origin_url   = string
     record_names = list(string)
+    origin_http  = optional(bool, false)
     # Bunny validates that live DNS already resolves to the pull zone before it will
     # attach a hostname or issue a certificate. Set false for the first apply so the
     # CNAMEs are created, then true once they have propagated.
@@ -248,9 +252,9 @@ variable "pull_zones" {
   validation {
     condition = alltrue([
       for z in var.pull_zones :
-      startswith(z.origin_url, "http://") || startswith(z.origin_url, "https://")
+      z.origin_http ? startswith(z.origin_url, "http://") : startswith(z.origin_url, "https://")
     ])
-    error_message = "pull_zones origin_url must start with http:// or https://."
+    error_message = "pull_zones origin_url must start with https:// unless origin_http = true (then http://)."
   }
 
   validation {

@@ -28,7 +28,9 @@ module "dns" {
 
 ### CNAME with CDN Acceleration and Shield
 
-Set `cdn = true` to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. [Bunny Shield](https://bunny.net/docs/shield/) is on by default when `cdn = true` (set `shield = false` to skip it). SSL only validates once the domain's nameservers point at Bunny DNS. No edge rules are created unless you pass `cdn_edge_rules`.
+Set `cdn = true` to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone and issues a Let's Encrypt certificate. [Bunny Shield](https://bunny.net/docs/shield/) is on by default when `cdn = true` (set `shield = false` to skip it). SSL only validates once the domain's nameservers point at Bunny DNS. No edge rules are created unless you pass `cdn_edge_rules`.
+
+Bunny manages the origin scheme for the pull zone it creates for CDN Acceleration. Configure that scheme in Bunny when it must differ from the current pull-zone setting.
 
 ```hcl
 module "dns" {
@@ -142,7 +144,7 @@ For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`
     {
       name                          = "example-assets"
       record_names                  = ["assets", "*.assets"]
-      origin_url                    = "http://origin.example.net"
+      origin_url                    = "https://origin.example.net"
       middleware                    = file("${path.module}/middleware.ts")
       originshield_enabled          = true
       originshield_zone             = "FR"
@@ -157,6 +159,8 @@ For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`
     },
   ]
 ```
+
+`origin_url` must be `https://`. Set `origin_http = true` and use `http://` only if the origin cannot speak TLS.
 
 Bunny refuses to attach a hostname until live DNS already resolves to the pull zone, so a brand new zone needs two applies: set `create_hostnames = false` first to publish the CNAMEs, then flip it to `true` once they have propagated.
 
