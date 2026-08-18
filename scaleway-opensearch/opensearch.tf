@@ -31,10 +31,25 @@ resource "scaleway_opensearch_deployment" "deployment" {
 }
 
 locals {
+  # Scaleway has renamed endpoint services over time (e.g. api -> api-opensearch).
+  # Match known names and fall back to ports so downstream outputs stay stable.
+  opensearch_api_service_names       = ["api", "api-opensearch", "opensearch"]
+  opensearch_dashboard_service_names = ["dashboard", "dashboards", "dashboard-opensearch", "dashboards-opensearch"]
+
   opensearch_api_urls = flatten([
     for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
       for service in endpoint.services : service.url
-      if contains(["api", "opensearch"], service.name)
+      if contains(local.opensearch_api_service_names, service.name) || service.port == 9200
+    ]
+  ])
+
+  # Keep the same shape as the provider's public_dashboard_url (raw host, no scheme).
+  opensearch_dashboard_urls = flatten([
+    for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
+      for service in endpoint.services : service.url
+      if endpoint.public && (
+        contains(local.opensearch_dashboard_service_names, service.name) || service.port == 5601
+      )
     ]
   ])
 
@@ -45,4 +60,13 @@ locals {
 
   opensearch_internal_address   = var.enable_private_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
   opensearch_public_api_address = var.enable_public_endpoint ? try(local.opensearch_formatted_api_urls[0], null) : null
+
+  # Prefer the provider attribute when set; otherwise derive from endpoints.
+  # Empty string is treated as unset (provider returns "" when no match).
+  opensearch_public_dashboard_url = (
+    try(scaleway_opensearch_deployment.deployment.public_dashboard_url, null) != null &&
+    try(scaleway_opensearch_deployment.deployment.public_dashboard_url, "") != ""
+    ? scaleway_opensearch_deployment.deployment.public_dashboard_url
+    : try(local.opensearch_dashboard_urls[0], null)
+  )
 }
