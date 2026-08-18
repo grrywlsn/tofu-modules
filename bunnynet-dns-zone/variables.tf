@@ -15,19 +15,30 @@ variable "a_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
+    When cdn = true, set cache_expiration_time (seconds) to override edge cache
+    TTL for GET requests on the accelerated pull zone.
   EOT
   type = list(object({
-    name   = string
-    value  = string
-    ttl    = optional(number)
-    cdn    = optional(bool, false)
-    shield = optional(bool)
+    name                  = string
+    value                 = string
+    ttl                   = optional(number)
+    cdn                   = optional(bool, false)
+    shield                = optional(bool)
+    cache_expiration_time = optional(number)
   }))
   default = []
 
   validation {
     condition     = alltrue([for r in var.a_records : r.shield != true || r.cdn])
     error_message = "a_records with shield = true also require cdn = true."
+  }
+
+  validation {
+    condition = alltrue([
+      for r in var.a_records :
+      r.cache_expiration_time == null || (r.cdn && r.cache_expiration_time > 0)
+    ])
+    error_message = "a_records cache_expiration_time requires cdn = true and must be a positive number of seconds."
   }
 }
 
@@ -37,19 +48,30 @@ variable "cname_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
+    When cdn = true, set cache_expiration_time (seconds) to override edge cache
+    TTL for GET requests on the accelerated pull zone.
   EOT
   type = list(object({
-    name   = string
-    value  = string
-    ttl    = optional(number)
-    cdn    = optional(bool, false)
-    shield = optional(bool)
+    name                  = string
+    value                 = string
+    ttl                   = optional(number)
+    cdn                   = optional(bool, false)
+    shield                = optional(bool)
+    cache_expiration_time = optional(number)
   }))
   default = []
 
   validation {
     condition     = alltrue([for r in var.cname_records : r.shield != true || r.cdn])
     error_message = "cname_records with shield = true also require cdn = true."
+  }
+
+  validation {
+    condition = alltrue([
+      for r in var.cname_records :
+      r.cache_expiration_time == null || (r.cdn && r.cache_expiration_time > 0)
+    ])
+    error_message = "cname_records cache_expiration_time requires cdn = true and must be a positive number of seconds."
   }
 }
 
