@@ -15,8 +15,8 @@ variable "a_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
-    CDN-accelerated records get the module cdn_cache edge-rule policy by default;
-    set cdn_cache on a record to override those defaults.
+    CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
+    set on the record (including [] to attach none).
   EOT
   type = list(object({
     name   = string
@@ -24,14 +24,25 @@ variable "a_records" {
     ttl    = optional(number)
     cdn    = optional(bool, false)
     shield = optional(bool)
-    cdn_cache = optional(object({
-      cache_expiration_time         = optional(number)
-      browser_cache_expiration_time = optional(number)
-      override_browser_cache        = optional(bool)
-      bypass_authorization          = optional(bool)
-      bypass_cookie_patterns        = optional(list(string))
-      bypass_url_patterns           = optional(list(string))
-    }))
+    edge_rules = optional(list(object({
+      description = optional(string, "")
+      enabled     = optional(bool, true)
+      match_type  = optional(string, "MatchAny")
+      priority    = number
+      actions = list(object({
+        type       = string
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+        parameter3 = optional(string)
+      }))
+      triggers = list(object({
+        type       = string
+        match_type = optional(string, "MatchAny")
+        patterns   = list(string)
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+      }))
+    })))
   }))
   default = []
 
@@ -43,9 +54,9 @@ variable "a_records" {
   validation {
     condition = alltrue([
       for r in var.a_records :
-      r.cdn_cache == null || r.cdn
+      r.edge_rules == null || r.cdn
     ])
-    error_message = "a_records cdn_cache requires cdn = true."
+    error_message = "a_records edge_rules requires cdn = true."
   }
 }
 
@@ -55,8 +66,8 @@ variable "cname_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
-    CDN-accelerated records get the module cdn_cache edge-rule policy by default;
-    set cdn_cache on a record to override those defaults.
+    CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
+    set on the record (including [] to attach none).
   EOT
   type = list(object({
     name   = string
@@ -64,14 +75,25 @@ variable "cname_records" {
     ttl    = optional(number)
     cdn    = optional(bool, false)
     shield = optional(bool)
-    cdn_cache = optional(object({
-      cache_expiration_time         = optional(number)
-      browser_cache_expiration_time = optional(number)
-      override_browser_cache        = optional(bool)
-      bypass_authorization          = optional(bool)
-      bypass_cookie_patterns        = optional(list(string))
-      bypass_url_patterns           = optional(list(string))
-    }))
+    edge_rules = optional(list(object({
+      description = optional(string, "")
+      enabled     = optional(bool, true)
+      match_type  = optional(string, "MatchAny")
+      priority    = number
+      actions = list(object({
+        type       = string
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+        parameter3 = optional(string)
+      }))
+      triggers = list(object({
+        type       = string
+        match_type = optional(string, "MatchAny")
+        patterns   = list(string)
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+      }))
+    })))
   }))
   default = []
 
@@ -83,56 +105,67 @@ variable "cname_records" {
   validation {
     condition = alltrue([
       for r in var.cname_records :
-      r.cdn_cache == null || r.cdn
+      r.edge_rules == null || r.cdn
     ])
-    error_message = "cname_records cdn_cache requires cdn = true."
+    error_message = "cname_records edge_rules requires cdn = true."
   }
 }
 
-variable "cdn_cache" {
+variable "cdn_edge_rules" {
   description = <<-EOT
-    Default edge-cache policy for CDN-accelerated (cdn = true) A/CNAME records.
-    Secure defaults: bypass when a session cookie or Authorization header is
-    present, bypass common auth/admin/inbox paths, cache anonymous GETs for 5
-    minutes at the edge, and prevent browsers from caching HTML (0s).
-    Per-record cdn_cache overrides these values (partial overrides inherit the
-    rest). Set bypass_* lists to [] to disable that bypass; set
-    cache_expiration_time to null (module) or 0 (per-record) to disable
-    anonymous GET caching.
+    Edge rules applied to every CDN-accelerated (cdn = true) A/CNAME record that
+    does not set its own edge_rules. Default is [] (no rules). Pass an explicit
+    list from the caller to configure cache/bypass (or any other) Bunny edge
+    rules. Lower priority numbers run first; OverrideCacheTime short-circuits on
+    the first match, so put bypasses at lower priorities than cache rules.
+    Bunny allows at most 5 patterns per trigger: a single-trigger rule with more
+    than 5 patterns is split across consecutive priorities automatically.
   EOT
-  type = object({
-    # Anonymous GET edge TTL in seconds. null disables the anonymous GET rule.
-    cache_expiration_time = optional(number, 300)
-    # When override_browser_cache is true, set browser Cache-Control max-age.
-    override_browser_cache        = optional(bool, true)
-    browser_cache_expiration_time = optional(number, 0)
-    # Bypass edge cache when Authorization is present (API / Bearer clients).
-    bypass_authorization = optional(bool, true)
-    # Bypass when Cookie matches any pattern (e.g. "*session=*").
-    bypass_cookie_patterns = optional(list(string), ["*session=*"])
-    # Bypass when request URL matches any pattern. Bunny allows 5 patterns per
-    # edge rule, so longer lists are split across consecutive rules.
-    bypass_url_patterns = optional(list(string), [
-      "*/oauth/*",
-      "*/login*",
-      "*/account*",
-      "*/admin*",
-      "*/inbox*",
-    ])
-  })
-  default = {}
+  type = list(object({
+    description = optional(string, "")
+    enabled     = optional(bool, true)
+    match_type  = optional(string, "MatchAny")
+    priority    = number
+    actions = list(object({
+      type       = string
+      parameter1 = optional(string)
+      parameter2 = optional(string)
+      parameter3 = optional(string)
+    }))
+    triggers = list(object({
+      type       = string
+      match_type = optional(string, "MatchAny")
+      patterns   = list(string)
+      parameter1 = optional(string)
+      parameter2 = optional(string)
+    }))
+  }))
+  default = []
 
   validation {
-    condition = (
-      var.cdn_cache.cache_expiration_time == null ||
-      var.cdn_cache.cache_expiration_time > 0
-    )
-    error_message = "cdn_cache.cache_expiration_time must be null or a positive number of seconds."
+    condition = alltrue([
+      for rule in var.cdn_edge_rules :
+      contains(["MatchAll", "MatchAny", "MatchNone"], rule.match_type)
+    ])
+    error_message = "cdn_edge_rules match_type must be MatchAll, MatchAny, or MatchNone."
   }
 
   validation {
-    condition     = var.cdn_cache.browser_cache_expiration_time >= 0
-    error_message = "cdn_cache.browser_cache_expiration_time must be >= 0."
+    condition = alltrue([
+      for rule in var.cdn_edge_rules :
+      length(rule.actions) > 0 && length(rule.triggers) > 0
+    ])
+    error_message = "cdn_edge_rules entries require at least one action and one trigger."
+  }
+
+  validation {
+    condition = alltrue([
+      for rule in var.cdn_edge_rules :
+      length(rule.triggers) == 1 || alltrue([
+        for t in rule.triggers : length(t.patterns) <= 5
+      ])
+    ])
+    error_message = "cdn_edge_rules with multiple triggers must have ≤5 patterns per trigger (single-trigger rules are auto-chunked)."
   }
 }
 
