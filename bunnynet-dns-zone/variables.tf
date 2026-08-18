@@ -125,8 +125,7 @@ variable "pull_zones" {
     # Seconds to wait for a coalesced origin response before falling through.
     request_coalescing_timeout = optional(number, 30)
     # TTL in seconds for the CNAME records that point at this pull zone.
-    # Omit to use Bunny's default TTL.
-    ttl = optional(number)
+    ttl = optional(number, 86400)
   }))
   default = []
 
@@ -141,9 +140,9 @@ variable "pull_zones" {
   validation {
     condition = alltrue([
       for z in var.pull_zones :
-      z.ttl == null || z.ttl > 0
+      z.ttl > 0
     ])
-    error_message = "pull_zones ttl must be a positive number of seconds when set."
+    error_message = "pull_zones ttl must be a positive number of seconds."
   }
 
   validation {
