@@ -2,75 +2,68 @@
 
 OpenTofu module to manage a [Bunny.net DNS zone](https://registry.terraform.io/providers/BunnyWay/bunnynet/latest/docs/resources/dns_zone) and lists of A, CNAME, TXT, and MX records.
 
-## Example
+Use `name = ""` for apex records. Record list variables default to `[]` (none).
+
+## Examples
+
+### CNAME without CDN
+
+A plain DNS CNAME — no pull zone, certificate, or Shield:
 
 ```hcl
 module "dns" {
-  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v1.0.0"
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
 
   domain = "example.com"
 
-  a_records = [
-    {
-      name  = ""
-      value = "192.0.2.10"
-      # CDN Acceleration (+ Shield by default) + Let's Encrypt cert
-      cdn = true
-    },
-    {
-      name  = "www"
-      value = "192.0.2.10"
-      ttl   = 300
-    },
-  ]
-
   cname_records = [
     {
-      name  = "cdn"
-      value = "cdn.example.net"
-    },
-    {
-      name   = "app"
-      value  = "origin.example.net"
-      cdn    = true
-      shield = false # CDN without Bunny Shield
-    },
-  ]
-
-  # Optional defaults for CDN-accelerated records (Shield on by default)
-  # shield = {
-  #   tier       = "Basic"
-  #   ddos_level = "Medium"
-  #   waf        = true
-  #   waf_mode   = "Block"
-  # }
-
-  txt_records = [
-    {
-      name  = ""
-      value = "v=spf1 include:_spf.example.com ~all"
-    },
-  ]
-
-  mx_records = [
-    {
-      name     = ""
-      value    = "mail.example.com"
-      priority = 10
+      name  = "www"
+      value = "origin.example.net"
+      ttl   = 86400
     },
   ]
 }
 ```
 
-Use `name = ""` for apex records. Record list variables default to `[]` (none).
+### CNAME with CDN Acceleration and Shield
 
-Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. SSL only validates once the domain's nameservers point at Bunny DNS.
-
-CDN Acceleration creates **no edge rules by default**. Pass `cdn_edge_rules` (or per-record `edge_rules`) to attach Bunny edge rules to every accelerated hostname. Omit the input or pass `[]` for none; set `edge_rules = []` on a record to skip module-level rules for that hostname only.
-
-Example — cache anonymous GETs for 5 minutes while bypassing session cookies, Authorization, and auth paths (lower priority numbers run first; [`OverrideCacheTime` short-circuits](https://bunny.net/docs/cdn/edge-rules/ordering) on the first match):
+Set `cdn = true` to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. [Bunny Shield](https://bunny.net/docs/shield/) is on by default when `cdn = true` (set `shield = false` to skip it). SSL only validates once the domain's nameservers point at Bunny DNS. No edge rules are created unless you pass `cdn_edge_rules`.
 
 ```hcl
+module "dns" {
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
+
+  domain = "example.com"
+
+  cname_records = [
+    {
+      name   = ""
+      value  = "origin.example.net"
+      ttl    = 86400
+      cdn    = true
+      shield = true
+    },
+  ]
+}
+```
+
+Tune Shield via the module-level `shield` input (defaults: Basic tier, Medium DDoS, WAF on/Block).
+
+### CNAME with CDN, Shield, and edge-cache rules
+
+Pass `cdn_edge_rules` to attach Bunny edge rules to every accelerated hostname. Per-record `edge_rules` overrides the module list (`[]` disables rules for that hostname only).
+
+Lower priority numbers run first. [`OverrideCacheTime` short-circuits](https://bunny.net/docs/cdn/edge-rules/ordering) on the first match, so put bypasses ahead of caching rules. Bunny caps a trigger at 5 patterns; a single-trigger rule with more than 5 is split across consecutive priorities automatically.
+
+```hcl
+module "dns" {
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
+
+  domain = "example.com"
+
+  # Bypass session cookies / Authorization / auth paths, then cache anonymous
+  # GETs for 5 minutes with no browser HTML cache.
   cdn_edge_rules = [
     {
       description = "Bypass cache when session cookie is present"
@@ -120,21 +113,39 @@ Example — cache anonymous GETs for 5 minutes while bypassing session cookies, 
       triggers    = [{ type = "RequestMethod", patterns = ["GET"] }]
     },
   ]
+
+  cname_records = [
+    {
+      name   = ""
+      value  = "origin.example.net"
+      ttl    = 86400
+      cdn    = true
+      shield = true
+    },
+    {
+      name   = "*"
+      value  = "origin.example.net"
+      ttl    = 86400
+      cdn    = true
+      shield = true
+    },
+  ]
+}
 ```
 
-Bunny caps an edge rule at 5 patterns per trigger. A single-trigger rule with more than 5 patterns is split across consecutive priorities automatically. Multi-trigger rules must already have ≤5 patterns per trigger.
+## Pull zones
 
 For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`. That creates an explicit pull zone with optional middleware, plus a CNAME and a TLS hostname for every entry in `record_names`. Names are relative to the zone, so use `""` for the apex and a leading `*.` for a wildcard. Do not also list those names in `a_records` or `cname_records`. Wildcard Let's Encrypt certificates require the zone's nameservers to point at Bunny DNS.
 
 ```hcl
   pull_zones = [
     {
-      name                  = "example-assets"
-      record_names          = ["assets", "*.assets"]
-      origin_url            = "http://origin.example.net"
-      middleware            = file("${path.module}/middleware.ts")
-      originshield_enabled  = true
-      originshield_zone     = "FR"
+      name                          = "example-assets"
+      record_names                  = ["assets", "*.assets"]
+      origin_url                    = "http://origin.example.net"
+      middleware                    = file("${path.module}/middleware.ts")
+      originshield_enabled          = true
+      originshield_zone             = "FR"
       cache_expiration_time         = 31536000
       cache_expiration_time_browser = 31536000
       cache_vary                    = ["hostname"]
@@ -165,8 +176,6 @@ create_hostnames = true
 ```
 
 Pull zone resources are also re-keyed by pull zone name and hostname, so existing callers should `tofu state mv` before applying or the pull zone will be recreated.
-
-[Bunny Shield](https://bunny.net/docs/shield/) is enabled by default whenever `cdn = true`. Set `shield = false` on a record to skip it. Tune tier / DDoS / WAF via the module-level `shield` input (defaults: Basic, Medium, WAF on/Block).
 
 ## DNSSEC
 
