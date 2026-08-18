@@ -47,7 +47,7 @@ locals {
   opensearch_dashboard_urls = flatten([
     for endpoint in scaleway_opensearch_deployment.deployment.endpoints : [
       for service in endpoint.services : service.url
-      if endpoint.public && (
+      if endpoint.public == true && (
         contains(local.opensearch_dashboard_service_names, service.name) || service.port == 5601
       )
     ]
