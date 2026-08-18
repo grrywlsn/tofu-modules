@@ -26,5 +26,5 @@ output "opensearch_public_api_address" {
 
 output "opensearch_public_dashboard_url" {
   description = "Public URL for OpenSearch Dashboards when a public endpoint exists"
-  value       = scaleway_opensearch_deployment.deployment.public_dashboard_url
+  value       = local.opensearch_public_dashboard_url
 }
