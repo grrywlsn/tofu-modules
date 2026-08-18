@@ -15,16 +15,23 @@ variable "a_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
-    When cdn = true, set cache_expiration_time (seconds) to override edge cache
-    TTL for GET requests on the accelerated pull zone.
+    CDN-accelerated records get the module cdn_cache edge-rule policy by default;
+    set cdn_cache on a record to override those defaults.
   EOT
   type = list(object({
-    name                  = string
-    value                 = string
-    ttl                   = optional(number)
-    cdn                   = optional(bool, false)
-    shield                = optional(bool)
-    cache_expiration_time = optional(number)
+    name   = string
+    value  = string
+    ttl    = optional(number)
+    cdn    = optional(bool, false)
+    shield = optional(bool)
+    cdn_cache = optional(object({
+      cache_expiration_time         = optional(number)
+      browser_cache_expiration_time = optional(number)
+      override_browser_cache        = optional(bool)
+      bypass_authorization          = optional(bool)
+      bypass_cookie_patterns        = optional(list(string))
+      bypass_url_patterns           = optional(list(string))
+    }))
   }))
   default = []
 
@@ -36,9 +43,9 @@ variable "a_records" {
   validation {
     condition = alltrue([
       for r in var.a_records :
-      r.cache_expiration_time == null || (r.cdn && r.cache_expiration_time > 0)
+      r.cdn_cache == null || r.cdn
     ])
-    error_message = "a_records cache_expiration_time requires cdn = true and must be a positive number of seconds."
+    error_message = "a_records cdn_cache requires cdn = true."
   }
 }
 
@@ -48,16 +55,23 @@ variable "cname_records" {
     Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
     pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
     enabled by default when cdn = true; set shield = false to disable it.
-    When cdn = true, set cache_expiration_time (seconds) to override edge cache
-    TTL for GET requests on the accelerated pull zone.
+    CDN-accelerated records get the module cdn_cache edge-rule policy by default;
+    set cdn_cache on a record to override those defaults.
   EOT
   type = list(object({
-    name                  = string
-    value                 = string
-    ttl                   = optional(number)
-    cdn                   = optional(bool, false)
-    shield                = optional(bool)
-    cache_expiration_time = optional(number)
+    name   = string
+    value  = string
+    ttl    = optional(number)
+    cdn    = optional(bool, false)
+    shield = optional(bool)
+    cdn_cache = optional(object({
+      cache_expiration_time         = optional(number)
+      browser_cache_expiration_time = optional(number)
+      override_browser_cache        = optional(bool)
+      bypass_authorization          = optional(bool)
+      bypass_cookie_patterns        = optional(list(string))
+      bypass_url_patterns           = optional(list(string))
+    }))
   }))
   default = []
 
@@ -69,9 +83,56 @@ variable "cname_records" {
   validation {
     condition = alltrue([
       for r in var.cname_records :
-      r.cache_expiration_time == null || (r.cdn && r.cache_expiration_time > 0)
+      r.cdn_cache == null || r.cdn
     ])
-    error_message = "cname_records cache_expiration_time requires cdn = true and must be a positive number of seconds."
+    error_message = "cname_records cdn_cache requires cdn = true."
+  }
+}
+
+variable "cdn_cache" {
+  description = <<-EOT
+    Default edge-cache policy for CDN-accelerated (cdn = true) A/CNAME records.
+    Secure defaults: bypass when a session cookie or Authorization header is
+    present, bypass common auth/admin/inbox paths, cache anonymous GETs for 5
+    minutes at the edge, and prevent browsers from caching HTML (0s).
+    Per-record cdn_cache overrides these values (partial overrides inherit the
+    rest). Set bypass_* lists to [] to disable that bypass; set
+    cache_expiration_time to null (module) or 0 (per-record) to disable
+    anonymous GET caching.
+  EOT
+  type = object({
+    # Anonymous GET edge TTL in seconds. null disables the anonymous GET rule.
+    cache_expiration_time = optional(number, 300)
+    # When override_browser_cache is true, set browser Cache-Control max-age.
+    override_browser_cache        = optional(bool, true)
+    browser_cache_expiration_time = optional(number, 0)
+    # Bypass edge cache when Authorization is present (API / Bearer clients).
+    bypass_authorization = optional(bool, true)
+    # Bypass when Cookie matches any pattern (e.g. "*session=*").
+    bypass_cookie_patterns = optional(list(string), ["*session=*"])
+    # Bypass when request URL matches any pattern. Bunny allows 5 patterns per
+    # edge rule, so longer lists are split across consecutive rules.
+    bypass_url_patterns = optional(list(string), [
+      "*/oauth/*",
+      "*/login*",
+      "*/account*",
+      "*/admin*",
+      "*/inbox*",
+    ])
+  })
+  default = {}
+
+  validation {
+    condition = (
+      var.cdn_cache.cache_expiration_time == null ||
+      var.cdn_cache.cache_expiration_time > 0
+    )
+    error_message = "cdn_cache.cache_expiration_time must be null or a positive number of seconds."
+  }
+
+  validation {
+    condition     = var.cdn_cache.browser_cache_expiration_time >= 0
+    error_message = "cdn_cache.browser_cache_expiration_time must be >= 0."
   }
 }
 

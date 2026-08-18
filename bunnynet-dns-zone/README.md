@@ -64,7 +64,48 @@ module "dns" {
 
 Use `name = ""` for apex records. Record list variables default to `[]` (none).
 
-Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. SSL only validates once the domain's nameservers point at Bunny DNS. Set `cache_expiration_time` (seconds) with `cdn = true` to override edge cache TTL for GET requests on that accelerated pull zone.
+Set `cdn = true` on an A or CNAME record to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acceleration): Bunny creates a pull zone for that hostname and issues a Let's Encrypt certificate. SSL only validates once the domain's nameservers point at Bunny DNS.
+
+CDN-accelerated hostnames get a **secure-by-default** edge-cache policy (`cdn_cache`):
+
+- Bypass cache when the `Cookie` header matches `*session=*` (or your patterns)
+- Bypass cache when an `Authorization` header is present
+- Bypass cache on common auth/admin/inbox URL patterns
+- Cache anonymous `GET` responses at the edge for 300s
+- Override browser cache for `GET` to 0s (no HTML caching in the browser)
+
+Defaults apply with no extra config—just `cdn = true`. Override at module level or per record:
+
+```hcl
+  # Module-wide defaults (optional — these are already the defaults)
+  # cdn_cache = {
+  #   cache_expiration_time         = 300
+  #   override_browser_cache        = true
+  #   browser_cache_expiration_time = 0
+  #   bypass_authorization          = true
+  #   bypass_cookie_patterns        = ["*session=*"]
+  #   bypass_url_patterns = [
+  #     "*/oauth/*", "*/login*", "*/account*", "*/admin*", "*/inbox*",
+  #   ]
+  # }
+
+  cname_records = [
+    {
+      name  = ""
+      value = "origin.example.net"
+      cdn   = true
+      # Optional per-record overrides (partial — unset fields inherit module defaults)
+      # cdn_cache = {
+      #   cache_expiration_time  = 600
+      #   bypass_cookie_patterns = ["*session=*", "*auth=*"]
+      # }
+    },
+  ]
+```
+
+Set `bypass_*` lists to `[]` to disable that bypass. Set module `cache_expiration_time = null` (or per-record `0`) to turn off anonymous GET caching.
+
+Bunny caps an edge rule at 5 patterns per condition, so longer `bypass_*` lists are split across consecutive rules automatically. Bypass rules always take lower priority numbers than the caching rules: Bunny runs rules from the lowest number up and [`OverrideCacheTime` short-circuits](https://bunny.net/docs/cdn/edge-rules/ordering) on the first match, so an authenticated request can never fall through to the caching rule.
 
 For a multi-tenant or rewritten origin, use `pull_zones` instead of `cdn = true`. That creates an explicit pull zone with optional middleware, plus a CNAME and a TLS hostname for every entry in `record_names`. Names are relative to the zone, so use `""` for the apex and a leading `*.` for a wildcard. Do not also list those names in `a_records` or `cname_records`. Wildcard Let's Encrypt certificates require the zone's nameservers to point at Bunny DNS.
 
@@ -149,7 +190,15 @@ No modules.
 | [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
 | [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_zone) | resource |
 | [bunnynet_pullzone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone) | resource |
+| [bunnynet_pullzone_edgerule.a_browser_cache_get](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.a_bypass_authorization](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.a_bypass_cookie](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.a_bypass_url](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
 | [bunnynet_pullzone_edgerule.a_cache_get](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.cname_browser_cache_get](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.cname_bypass_authorization](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.cname_bypass_cookie](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_edgerule.cname_bypass_url](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
 | [bunnynet_pullzone_edgerule.cname_cache_get](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
 | [bunnynet_pullzone_hostname.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_hostname) | resource |
 | [bunnynet_pullzone_shield.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
@@ -159,8 +208,9 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_a_records"></a> [a\_records](#input\_a\_records) | A records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it.<br/>When cdn = true, set cache\_expiration\_time (seconds) to override edge cache<br/>TTL for GET requests on the accelerated pull zone. | <pre>list(object({<br/>    name                  = string<br/>    value                 = string<br/>    ttl                   = optional(number)<br/>    cdn                   = optional(bool, false)<br/>    shield                = optional(bool)<br/>    cache_expiration_time = optional(number)<br/>  }))</pre> | `[]` | no |
-| <a name="input_cname_records"></a> [cname\_records](#input\_cname\_records) | CNAME records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it.<br/>When cdn = true, set cache\_expiration\_time (seconds) to override edge cache<br/>TTL for GET requests on the accelerated pull zone. | <pre>list(object({<br/>    name                  = string<br/>    value                 = string<br/>    ttl                   = optional(number)<br/>    cdn                   = optional(bool, false)<br/>    shield                = optional(bool)<br/>    cache_expiration_time = optional(number)<br/>  }))</pre> | `[]` | no |
+| <a name="input_a_records"></a> [a\_records](#input\_a\_records) | A records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it.<br/>CDN-accelerated records get the module cdn\_cache edge-rule policy by default;<br/>set cdn\_cache on a record to override those defaults. | <pre>list(object({<br/>    name   = string<br/>    value  = string<br/>    ttl    = optional(number)<br/>    cdn    = optional(bool, false)<br/>    shield = optional(bool)<br/>    cdn_cache = optional(object({<br/>      cache_expiration_time         = optional(number)<br/>      browser_cache_expiration_time = optional(number)<br/>      override_browser_cache        = optional(bool)<br/>      bypass_authorization          = optional(bool)<br/>      bypass_cookie_patterns        = optional(list(string))<br/>      bypass_url_patterns           = optional(list(string))<br/>    }))<br/>  }))</pre> | `[]` | no |
+| <a name="input_cdn_cache"></a> [cdn\_cache](#input\_cdn\_cache) | Default edge-cache policy for CDN-accelerated (cdn = true) A/CNAME records.<br/>Secure defaults: bypass when a session cookie or Authorization header is<br/>present, bypass common auth/admin/inbox paths, cache anonymous GETs for 5<br/>minutes at the edge, and prevent browsers from caching HTML (0s).<br/>Per-record cdn\_cache overrides these values (partial overrides inherit the<br/>rest). Set bypass\_* lists to [] to disable that bypass; set<br/>cache\_expiration\_time to null (module) or 0 (per-record) to disable<br/>anonymous GET caching. | <pre>object({<br/>    # Anonymous GET edge TTL in seconds. null disables the anonymous GET rule.<br/>    cache_expiration_time = optional(number, 300)<br/>    # When override_browser_cache is true, set browser Cache-Control max-age.<br/>    override_browser_cache        = optional(bool, true)<br/>    browser_cache_expiration_time = optional(number, 0)<br/>    # Bypass edge cache when Authorization is present (API / Bearer clients).<br/>    bypass_authorization = optional(bool, true)<br/>    # Bypass when Cookie matches any pattern (e.g. "*session=*").<br/>    bypass_cookie_patterns = optional(list(string), ["*session=*"])<br/>    # Bypass when request URL matches any pattern. Bunny allows 5 patterns per<br/>    # edge rule, so longer lists are split across consecutive rules.<br/>    bypass_url_patterns = optional(list(string), [<br/>      "*/oauth/*",<br/>      "*/login*",<br/>      "*/account*",<br/>      "*/admin*",<br/>      "*/inbox*",<br/>    ])<br/>  })</pre> | `{}` | no |
+| <a name="input_cname_records"></a> [cname\_records](#input\_cname\_records) | CNAME records to create. Use name = "" for the apex. Empty list creates none.<br/>Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a<br/>pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is<br/>enabled by default when cdn = true; set shield = false to disable it.<br/>CDN-accelerated records get the module cdn\_cache edge-rule policy by default;<br/>set cdn\_cache on a record to override those defaults. | <pre>list(object({<br/>    name   = string<br/>    value  = string<br/>    ttl    = optional(number)<br/>    cdn    = optional(bool, false)<br/>    shield = optional(bool)<br/>    cdn_cache = optional(object({<br/>      cache_expiration_time         = optional(number)<br/>      browser_cache_expiration_time = optional(number)<br/>      override_browser_cache        = optional(bool)<br/>      bypass_authorization          = optional(bool)<br/>      bypass_cookie_patterns        = optional(list(string))<br/>      bypass_url_patterns           = optional(list(string))<br/>    }))<br/>  }))</pre> | `[]` | no |
 | <a name="input_dnssec_enabled"></a> [dnssec\_enabled](#input\_dnssec\_enabled) | Whether DNSSEC is enabled for the zone | `bool` | `true` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name for the Bunny.net DNS zone (e.g. example.com) | `string` | n/a | yes |
 | <a name="input_mx_records"></a> [mx\_records](#input\_mx\_records) | MX records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name     = string<br/>    value    = string<br/>    priority = number<br/>    ttl      = optional(number)<br/>  }))</pre> | `[]` | no |
