@@ -78,6 +78,7 @@ resource "bunnynet_dns_record" "pull_zone_cname" {
   # cdn_domain is the shared parent (e.g. b-cdn.net); records must point at the
   # pull zone's own hostname below it.
   value       = "${bunnynet_pullzone.this[each.value.zone_key].name}.${bunnynet_pullzone.this[each.value.zone_key].cdn_domain}"
+  ttl         = local.pull_zones[each.value.zone_key].ttl
   accelerated = false
 }
 

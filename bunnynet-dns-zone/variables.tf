@@ -124,6 +124,9 @@ variable "pull_zones" {
     request_coalescing_enabled = optional(bool, false)
     # Seconds to wait for a coalesced origin response before falling through.
     request_coalescing_timeout = optional(number, 30)
+    # TTL in seconds for the CNAME records that point at this pull zone.
+    # Omit to use Bunny's default TTL.
+    ttl = optional(number)
   }))
   default = []
 
@@ -133,6 +136,14 @@ variable "pull_zones" {
       startswith(z.origin_url, "http://") || startswith(z.origin_url, "https://")
     ])
     error_message = "pull_zones origin_url must start with http:// or https://."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pull_zones :
+      z.ttl == null || z.ttl > 0
+    ])
+    error_message = "pull_zones ttl must be a positive number of seconds when set."
   }
 
   validation {
