@@ -12,7 +12,7 @@ A plain DNS CNAME — no pull zone, certificate, or Shield:
 
 ```hcl
 module "dns" {
-  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.3.0"
 
   domain = "example.com"
 
@@ -32,7 +32,7 @@ Set `cdn = true` to enable [CDN Acceleration](https://bunny.net/docs/cdn/cdn-acc
 
 ```hcl
 module "dns" {
-  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.3.0"
 
   domain = "example.com"
 
@@ -58,7 +58,7 @@ Lower priority numbers run first. [`OverrideCacheTime` short-circuits](https://b
 
 ```hcl
 module "dns" {
-  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.2.0"
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v2.3.0"
 
   domain = "example.com"
 
