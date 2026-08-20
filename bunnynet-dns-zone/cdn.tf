@@ -34,6 +34,7 @@ resource "bunnynet_pullzone" "cdn" {
   cache_stale                = toset(each.value.cache_stale)
   cache_chunked              = each.value.cache_chunked
   cache_expiration_time      = each.value.cache_expiration_time
+  cache_enabled              = each.value.smart_cache
   strip_cookies              = each.value.strip_cookies
   block_no_referer           = each.value.block_no_referer
   use_background_update      = each.value.use_background_update
