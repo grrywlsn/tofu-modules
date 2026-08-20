@@ -12,19 +12,29 @@ variable "dnssec_enabled" {
 variable "a_records" {
   description = <<-EOT
     A records to create. Use name = "" for the apex. Empty list creates none.
-    Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
-    pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
-    enabled by default when cdn = true; set shield = false to disable it.
-    CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
-    set on the record (including [] to attach none). Bunny manages the origin
-    scheme for the automatically-created CDN Acceleration pull zone.
+    Set cdn = true to create a Terraform-managed Bunny pull zone for the
+    hostname (origin URL derived from the record value) and a PullZone DNS
+    record that links them. Bunny Shield is enabled by default when cdn = true;
+    set shield = false to disable it. CDN records inherit module cdn_edge_rules
+    unless edge_rules is set on the record (including [] to attach none).
+    Origin TLS is verified by default (verify_ssl = true).
   EOT
   type = list(object({
-    name   = string
-    value  = string
-    ttl    = optional(number)
-    cdn    = optional(bool, false)
-    shield = optional(bool)
+    name                       = string
+    value                      = string
+    ttl                        = optional(number)
+    cdn                        = optional(bool, false)
+    shield                     = optional(bool)
+    origin_http                = optional(bool, false)
+    forward_host_header        = optional(bool, true)
+    verify_ssl                 = optional(bool, true)
+    strip_cookies              = optional(bool, false)
+    cache_vary                 = optional(list(string), [])
+    cache_stale                = optional(list(string), [])
+    cache_chunked              = optional(bool, false)
+    use_background_update      = optional(bool, false)
+    request_coalescing_enabled = optional(bool, false)
+    request_coalescing_timeout = optional(number, 30)
     edge_rules = optional(list(object({
       description = optional(string, "")
       enabled     = optional(bool, true)
@@ -64,19 +74,29 @@ variable "a_records" {
 variable "cname_records" {
   description = <<-EOT
     CNAME records to create. Use name = "" for the apex. Empty list creates none.
-    Set cdn = true to enable Bunny CDN Acceleration for the hostname (creates a
-    pull zone and issues a Let's Encrypt certificate for it). Bunny Shield is
-    enabled by default when cdn = true; set shield = false to disable it.
-    CDN-accelerated records inherit module cdn_edge_rules unless edge_rules is
-    set on the record (including [] to attach none). Bunny manages the origin
-    scheme for the automatically-created CDN Acceleration pull zone.
+    Set cdn = true to create a Terraform-managed Bunny pull zone for the
+    hostname (origin URL derived from the record value) and a PullZone DNS
+    record that links them. Bunny Shield is enabled by default when cdn = true;
+    set shield = false to disable it. CDN records inherit module cdn_edge_rules
+    unless edge_rules is set on the record (including [] to attach none).
+    Origin TLS is verified by default (verify_ssl = true).
   EOT
   type = list(object({
-    name   = string
-    value  = string
-    ttl    = optional(number)
-    cdn    = optional(bool, false)
-    shield = optional(bool)
+    name                       = string
+    value                      = string
+    ttl                        = optional(number)
+    cdn                        = optional(bool, false)
+    shield                     = optional(bool)
+    origin_http                = optional(bool, false)
+    forward_host_header        = optional(bool, true)
+    verify_ssl                 = optional(bool, true)
+    strip_cookies              = optional(bool, false)
+    cache_vary                 = optional(list(string), [])
+    cache_stale                = optional(list(string), [])
+    cache_chunked              = optional(bool, false)
+    use_background_update      = optional(bool, false)
+    request_coalescing_enabled = optional(bool, false)
+    request_coalescing_timeout = optional(number, 30)
     edge_rules = optional(list(object({
       description = optional(string, "")
       enabled     = optional(bool, true)
@@ -115,11 +135,11 @@ variable "cname_records" {
 
 variable "cdn_edge_rules" {
   description = <<-EOT
-    Edge rules applied to every CDN-accelerated (cdn = true) A/CNAME record that
-    does not set its own edge_rules. Default is [] (no rules). Pass an explicit
-    list from the caller to configure cache/bypass (or any other) Bunny edge
-    rules. Lower priority numbers run first; OverrideCacheTime short-circuits on
-    the first match, so put bypasses at lower priorities than cache rules.
+    Edge rules applied to every CDN (cdn = true) A/CNAME record that does not
+    set its own edge_rules. Default is [] (no rules). Pass an explicit list from
+    the caller to configure cache/bypass (or any other) Bunny edge rules. Lower
+    priority numbers run first; OverrideCacheTime short-circuits on the first
+    match, so put bypasses at lower priorities than cache rules.
     Bunny allows at most 5 patterns per trigger: a single-trigger rule with more
     than 5 patterns is split across consecutive priorities automatically.
   EOT
@@ -173,8 +193,9 @@ variable "cdn_edge_rules" {
 
 variable "shield" {
   description = <<-EOT
-    Defaults applied to Bunny Shield when CDN Acceleration is enabled for a
-    record (unless that record sets shield = false).
+    Defaults applied to Bunny Shield when a pull zone is created for a cdn = true
+    record or a pull_zones entry with shield = true (unless that record sets
+    shield = false).
     See https://bunny.net/docs/shield/ for plan tiers and options.
   EOT
   type = object({
@@ -204,14 +225,19 @@ variable "shield" {
 variable "pull_zones" {
   description = <<-EOT
     Explicit Bunny pull zones attached to this DNS zone. Distinct from record-level
-    cdn = true (CDN Acceleration). Each entry creates a pull zone and, for every
-    record_names entry, a CNAME pointing at the pull zone plus a matching pull zone
-    hostname. Record names are relative to the zone: use "" for the apex and a
-    leading "*." for wildcards (e.g. ["assets", "*.assets"]). Do not also list those
-    names in a_records or cname_records.
+    cdn = true. Each entry creates a pull zone and, for every record_names entry, a
+    CNAME pointing at the pull zone plus a matching pull zone hostname. Record
+    names are relative to the zone: use "" for the apex and a leading "*." for
+    wildcards (e.g. ["assets", "*.assets"]). Do not also list those names in
+    a_records or cname_records.
     Set middleware to a Bunny compute script (type middleware) that rewrites origin
-    requests. Shield/WAF is not enabled for these pull zones. origin_url must be
-    https:// unless origin_http = true.
+    requests. origin_url must be https:// unless origin_http = true.
+    Set forward_host_header = true when the origin routes by hostname; note that
+    Bunny still uses the origin_url hostname for TLS SNI, so the origin needs a
+    certificate and route for that name. Origin TLS is verified by default
+    (verify_ssl = true). Set shield = true to apply the module-level shield
+    defaults. These pull zones do not inherit cdn_edge_rules: pass edge_rules
+    per pull zone.
   EOT
   type = list(object({
     name         = string
@@ -221,16 +247,25 @@ variable "pull_zones" {
     # Bunny validates that live DNS already resolves to the pull zone before it will
     # attach a hostname or issue a certificate. Set false for the first apply so the
     # CNAMEs are created, then true once they have propagated.
-    create_hostnames              = optional(bool, true)
-    middleware                    = optional(string)
-    tls                           = optional(bool, true)
-    force_ssl                     = optional(bool, true)
+    create_hostnames = optional(bool, true)
+    middleware       = optional(string)
+    tls              = optional(bool, true)
+    force_ssl        = optional(bool, true)
+    # Send the client's Host header to the origin instead of the origin hostname.
+    forward_host_header = optional(bool, false)
+    # Verify the origin TLS certificate. Defaults to true.
+    verify_ssl = optional(bool, true)
+    # Bunny Shield, configured from the module-level shield input.
+    shield                        = optional(bool, false)
     originshield_enabled          = optional(bool, false)
     originshield_zone             = optional(string)
     cache_expiration_time         = optional(number)
     cache_expiration_time_browser = optional(number)
     cache_vary                    = optional(list(string), [])
     cache_errors                  = optional(bool, false)
+    # Bunny strips Set-Cookie from origin responses by default, which breaks any
+    # origin that logs users in. Set false for application origins.
+    strip_cookies = optional(bool, true)
     # Serve stale content while the origin is unreachable and/or while Bunny is
     # refreshing the object. Empty disables stale serving.
     cache_stale = optional(list(string), [])
@@ -246,8 +281,61 @@ variable "pull_zones" {
     request_coalescing_timeout = optional(number, 30)
     # TTL in seconds for the CNAME records that point at this pull zone.
     ttl = optional(number, 86400)
+    # Bunny edge rules for this pull zone. Same shape and chunking rules as
+    # cdn_edge_rules, which explicit pull zones do not inherit.
+    edge_rules = optional(list(object({
+      description = optional(string, "")
+      enabled     = optional(bool, true)
+      match_type  = optional(string, "MatchAny")
+      priority    = number
+      actions = list(object({
+        type       = string
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+        parameter3 = optional(string)
+      }))
+      triggers = list(object({
+        type       = string
+        match_type = optional(string, "MatchAny")
+        patterns   = list(string)
+        parameter1 = optional(string)
+        parameter2 = optional(string)
+      }))
+    })), [])
   }))
   default = []
+
+  validation {
+    condition = alltrue([
+      for z in var.pull_zones : alltrue([
+        for rule in z.edge_rules :
+        contains(["MatchAll", "MatchAny", "MatchNone"], rule.match_type)
+      ])
+    ])
+    error_message = "pull_zones edge_rules match_type must be MatchAll, MatchAny, or MatchNone."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pull_zones : alltrue([
+        for rule in z.edge_rules :
+        length(rule.actions) > 0 && length(rule.triggers) > 0
+      ])
+    ])
+    error_message = "pull_zones edge_rules entries require at least one action and one trigger."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pull_zones : alltrue([
+        for rule in z.edge_rules :
+        length(rule.triggers) == 1 || alltrue([
+          for t in rule.triggers : length(t.patterns) <= 5
+        ])
+      ])
+    ])
+    error_message = "pull_zones edge_rules with multiple triggers must have ≤5 patterns per trigger (single-trigger rules are auto-chunked)."
+  }
 
   validation {
     condition = alltrue([
