@@ -53,6 +53,11 @@ output "cdn_pullzone_ids" {
   value       = { for k, z in bunnynet_pullzone.cdn : k => z.id }
 }
 
+output "cdn_hostname_ids" {
+  description = "Map of cdn = true record keys (a/… or cname/…) to their pull zone hostname IDs"
+  value       = { for k, h in bunnynet_pullzone_hostname.cdn : k => h.id }
+}
+
 output "a_cdn_pullzone_ids" {
   description = "Map of A record keys with cdn = true to their Terraform-managed pull zone IDs"
   value = {

@@ -20,6 +20,8 @@ variable "a_records" {
     Origin TLS is verified by default (verify_ssl = true).
     Bunny Smart Cache is on by default (smart_cache = true), so HTML and other
     dynamic responses are proxied rather than held for cache_expiration_time.
+    The hostname is attached to the pull zone (create_hostname = true) so the
+    edge can route it; a PullZone DNS record alone does not do this.
   EOT
   type = list(object({
     name                       = string
@@ -27,6 +29,9 @@ variable "a_records" {
     ttl                        = optional(number)
     cdn                        = optional(bool, false)
     shield                     = optional(bool)
+    create_hostname            = optional(bool, true)
+    tls                        = optional(bool, true)
+    force_ssl                  = optional(bool, true)
     origin_http                = optional(bool, false)
     forward_host_header        = optional(bool, true)
     verify_ssl                 = optional(bool, true)
@@ -87,6 +92,8 @@ variable "cname_records" {
     Origin TLS is verified by default (verify_ssl = true).
     Bunny Smart Cache is on by default (smart_cache = true), so HTML and other
     dynamic responses are proxied rather than held for cache_expiration_time.
+    The hostname is attached to the pull zone (create_hostname = true) so the
+    edge can route it; a PullZone DNS record alone does not do this.
   EOT
   type = list(object({
     name                       = string
@@ -94,6 +101,9 @@ variable "cname_records" {
     ttl                        = optional(number)
     cdn                        = optional(bool, false)
     shield                     = optional(bool)
+    create_hostname            = optional(bool, true)
+    tls                        = optional(bool, true)
+    force_ssl                  = optional(bool, true)
     origin_http                = optional(bool, false)
     forward_host_header        = optional(bool, true)
     verify_ssl                 = optional(bool, true)

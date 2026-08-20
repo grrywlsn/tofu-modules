@@ -11,6 +11,12 @@ locals {
       length(name) <= 40 ? name : "cdn-${substr(sha256("${var.domain}/${k}"), 0, 12)}"
     )
   }
+
+  cdn_hostnames = {
+    for k, record in local.cdn_records : k => (
+      record.name != "" ? "${record.name}.${var.domain}" : var.domain
+    ) if record.create_hostname
+  }
 }
 
 resource "bunnynet_pullzone" "cdn" {
@@ -44,4 +50,22 @@ resource "bunnynet_pullzone" "cdn" {
   routing {
     tier = "Standard"
   }
+}
+
+# A PullZone DNS record points the name at Bunny's edge but does not register it
+# on the pull zone, and the edge routes by Host: without this the hostname is
+# answered with a 403 and the fallback b-cdn.net certificate.
+resource "bunnynet_pullzone_hostname" "cdn" {
+  for_each = local.cdn_hostnames
+
+  pullzone    = bunnynet_pullzone.cdn[each.key].id
+  name        = each.value
+  tls_enabled = local.cdn_records[each.key].tls
+  force_ssl   = local.cdn_records[each.key].force_ssl
+
+  # Bunny validates that live DNS already resolves to the pull zone.
+  depends_on = [
+    bunnynet_dns_record.a,
+    bunnynet_dns_record.cname,
+  ]
 }
