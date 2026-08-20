@@ -15,6 +15,21 @@ locals {
     })
   }
 
+  cdn_records = merge(
+    {
+      for k, record in local.a_records : "a/${k}" => merge(record, {
+        kind = "a"
+        key  = k
+      }) if record.cdn
+    },
+    {
+      for k, record in local.cname_records : "cname/${k}" => merge(record, {
+        kind = "cname"
+        key  = k
+      }) if record.cdn
+    },
+  )
+
   txt_records = {
     for idx, record in var.txt_records :
     "${record.name != "" ? record.name : "@"}-${record.value}-${idx}" => record
@@ -31,10 +46,11 @@ resource "bunnynet_dns_record" "a" {
 
   zone        = bunnynet_dns_zone.this.id
   name        = each.value.name
-  type        = "A"
-  value       = each.value.value
+  type        = each.value.cdn ? "PullZone" : "A"
+  value       = each.value.cdn ? bunnynet_pullzone.cdn["a/${each.key}"].name : each.value.value
   ttl         = each.value.ttl
-  accelerated = each.value.cdn
+  accelerated = false
+  pullzone_id = each.value.cdn ? bunnynet_pullzone.cdn["a/${each.key}"].id : null
 }
 
 resource "bunnynet_dns_record" "cname" {
@@ -42,10 +58,11 @@ resource "bunnynet_dns_record" "cname" {
 
   zone        = bunnynet_dns_zone.this.id
   name        = each.value.name
-  type        = "CNAME"
-  value       = each.value.value
+  type        = each.value.cdn ? "PullZone" : "CNAME"
+  value       = each.value.cdn ? bunnynet_pullzone.cdn["cname/${each.key}"].name : each.value.value
   ttl         = each.value.ttl
-  accelerated = each.value.cdn
+  accelerated = false
+  pullzone_id = each.value.cdn ? bunnynet_pullzone.cdn["cname/${each.key}"].id : null
 }
 
 resource "bunnynet_dns_record" "txt" {

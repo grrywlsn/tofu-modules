@@ -1,19 +1,19 @@
 locals {
-  a_shield_records = {
-    for k, record in local.a_records : k => record
+  cdn_shield_records = {
+    for k, record in local.cdn_records : k => record
     if record.shield
   }
 
-  cname_shield_records = {
-    for k, record in local.cname_records : k => record
-    if record.shield
+  pull_zone_shields = {
+    for k, zone in local.pull_zones : k => zone
+    if zone.shield
   }
 }
 
-resource "bunnynet_pullzone_shield" "a" {
-  for_each = local.a_shield_records
+resource "bunnynet_pullzone_shield" "cdn" {
+  for_each = local.cdn_shield_records
 
-  pullzone = bunnynet_dns_record.a[each.key].accelerated_pullzone
+  pullzone = bunnynet_pullzone.cdn[each.key].id
   tier     = var.shield.tier
 
   ddos {
@@ -26,10 +26,10 @@ resource "bunnynet_pullzone_shield" "a" {
   }
 }
 
-resource "bunnynet_pullzone_shield" "cname" {
-  for_each = local.cname_shield_records
+resource "bunnynet_pullzone_shield" "pull_zone" {
+  for_each = local.pull_zone_shields
 
-  pullzone = bunnynet_dns_record.cname[each.key].accelerated_pullzone
+  pullzone = bunnynet_pullzone.this[each.key].id
   tier     = var.shield.tier
 
   ddos {

@@ -48,30 +48,46 @@ output "cname_record_ids" {
   value       = { for k, r in bunnynet_dns_record.cname : k => r.id }
 }
 
+output "cdn_pullzone_ids" {
+  description = "Map of cdn = true record keys (a/… or cname/…) to Terraform-managed pull zone IDs"
+  value       = { for k, z in bunnynet_pullzone.cdn : k => z.id }
+}
+
 output "a_cdn_pullzone_ids" {
-  description = "Map of A record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs"
+  description = "Map of A record keys with cdn = true to their Terraform-managed pull zone IDs"
   value = {
-    for k, r in bunnynet_dns_record.a : k => r.accelerated_pullzone
-    if r.accelerated
+    for k, r in bunnynet_dns_record.a : k => bunnynet_pullzone.cdn["a/${k}"].id
+    if r.type == "PullZone"
   }
 }
 
 output "cname_cdn_pullzone_ids" {
-  description = "Map of CNAME record keys with cdn = true to their Bunny CDN Acceleration pull zone IDs"
+  description = "Map of CNAME record keys with cdn = true to their Terraform-managed pull zone IDs"
   value = {
-    for k, r in bunnynet_dns_record.cname : k => r.accelerated_pullzone
-    if r.accelerated
+    for k, r in bunnynet_dns_record.cname : k => bunnynet_pullzone.cdn["cname/${k}"].id
+    if r.type == "PullZone"
   }
 }
 
 output "a_shield_ids" {
-  description = "Map of A record keys with Bunny Shield enabled to their Shield IDs"
-  value       = { for k, r in bunnynet_pullzone_shield.a : k => r.id }
+  description = "Map of CDN A-record pull zones with Bunny Shield enabled to their Shield IDs"
+  value = {
+    for k, r in bunnynet_pullzone_shield.cdn : trimprefix(k, "a/") => r.id
+    if startswith(k, "a/")
+  }
 }
 
 output "cname_shield_ids" {
-  description = "Map of CNAME record keys with Bunny Shield enabled to their Shield IDs"
-  value       = { for k, r in bunnynet_pullzone_shield.cname : k => r.id }
+  description = "Map of CDN CNAME-record pull zones with Bunny Shield enabled to their Shield IDs"
+  value = {
+    for k, r in bunnynet_pullzone_shield.cdn : trimprefix(k, "cname/") => r.id
+    if startswith(k, "cname/")
+  }
+}
+
+output "pull_zone_shield_ids" {
+  description = "Map of pull zone names with Bunny Shield enabled to their Shield IDs"
+  value       = { for k, r in bunnynet_pullzone_shield.pull_zone : k => r.id }
 }
 
 output "pull_zone_ids" {

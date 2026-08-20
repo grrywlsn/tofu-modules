@@ -43,7 +43,8 @@ resource "bunnynet_pullzone" "this" {
   origin {
     type                = "OriginUrl"
     url                 = each.value.origin_url
-    forward_host_header = false
+    forward_host_header = each.value.forward_host_header
+    verify_ssl          = each.value.verify_ssl
     follow_redirects    = true
     middleware_script   = try(bunnynet_compute_script.pull_zone[each.key].id, null)
   }
@@ -52,6 +53,7 @@ resource "bunnynet_pullzone" "this" {
   originshield_zone    = each.value.originshield_enabled ? each.value.originshield_zone : null
 
   cache_errors                  = each.value.cache_errors
+  strip_cookies                 = each.value.strip_cookies
   cache_expiration_time         = each.value.cache_expiration_time
   cache_expiration_time_browser = each.value.cache_expiration_time_browser
   cache_vary                    = toset(each.value.cache_vary)
