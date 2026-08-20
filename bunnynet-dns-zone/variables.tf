@@ -29,6 +29,8 @@ variable "a_records" {
     forward_host_header        = optional(bool, true)
     verify_ssl                 = optional(bool, true)
     strip_cookies              = optional(bool, false)
+    cache_expiration_time      = optional(number, 31919000)
+    block_no_referer           = optional(bool, false)
     cache_vary                 = optional(list(string), [])
     cache_stale                = optional(list(string), [])
     cache_chunked              = optional(bool, false)
@@ -91,6 +93,8 @@ variable "cname_records" {
     forward_host_header        = optional(bool, true)
     verify_ssl                 = optional(bool, true)
     strip_cookies              = optional(bool, false)
+    cache_expiration_time      = optional(number, 31919000)
+    block_no_referer           = optional(bool, false)
     cache_vary                 = optional(list(string), [])
     cache_stale                = optional(list(string), [])
     cache_chunked              = optional(bool, false)
@@ -266,6 +270,9 @@ variable "pull_zones" {
     # Bunny strips Set-Cookie from origin responses by default, which breaks any
     # origin that logs users in. Set false for application origins.
     strip_cookies = optional(bool, true)
+    # Bunny blocks requests with no Referer by default; that breaks direct
+    # visits. Default off.
+    block_no_referer = optional(bool, false)
     # Serve stale content while the origin is unreachable and/or while Bunny is
     # refreshing the object. Empty disables stale serving.
     cache_stale = optional(list(string), [])
