@@ -53,6 +53,7 @@ resource "bunnynet_pullzone" "this" {
   originshield_zone    = each.value.originshield_enabled ? each.value.originshield_zone : null
 
   cache_errors                  = each.value.cache_errors
+  cache_enabled                 = each.value.smart_cache
   strip_cookies                 = each.value.strip_cookies
   block_no_referer              = each.value.block_no_referer
   cache_expiration_time         = each.value.cache_expiration_time

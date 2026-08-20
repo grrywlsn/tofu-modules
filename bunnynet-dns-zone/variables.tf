@@ -18,6 +18,8 @@ variable "a_records" {
     set shield = false to disable it. CDN records inherit module cdn_edge_rules
     unless edge_rules is set on the record (including [] to attach none).
     Origin TLS is verified by default (verify_ssl = true).
+    Bunny Smart Cache is on by default (smart_cache = true), so HTML and other
+    dynamic responses are proxied rather than held for cache_expiration_time.
   EOT
   type = list(object({
     name                       = string
@@ -31,6 +33,7 @@ variable "a_records" {
     strip_cookies              = optional(bool, false)
     cache_expiration_time      = optional(number, 31919000)
     block_no_referer           = optional(bool, false)
+    smart_cache                = optional(bool, true)
     cache_vary                 = optional(list(string), [])
     cache_stale                = optional(list(string), [])
     cache_chunked              = optional(bool, false)
@@ -82,6 +85,8 @@ variable "cname_records" {
     set shield = false to disable it. CDN records inherit module cdn_edge_rules
     unless edge_rules is set on the record (including [] to attach none).
     Origin TLS is verified by default (verify_ssl = true).
+    Bunny Smart Cache is on by default (smart_cache = true), so HTML and other
+    dynamic responses are proxied rather than held for cache_expiration_time.
   EOT
   type = list(object({
     name                       = string
@@ -95,6 +100,7 @@ variable "cname_records" {
     strip_cookies              = optional(bool, false)
     cache_expiration_time      = optional(number, 31919000)
     block_no_referer           = optional(bool, false)
+    smart_cache                = optional(bool, true)
     cache_vary                 = optional(list(string), [])
     cache_stale                = optional(list(string), [])
     cache_chunked              = optional(bool, false)
@@ -273,6 +279,10 @@ variable "pull_zones" {
     # Bunny blocks requests with no Referer by default; that breaks direct
     # visits. Default off.
     block_no_referer = optional(bool, false)
+    # Bunny Smart Cache (cache_enabled): only cache known-static extensions and
+    # MIME types, always proxy dynamic responses. Off here because explicit pull
+    # zones set their own cache_expiration_time.
+    smart_cache = optional(bool, false)
     # Serve stale content while the origin is unreachable and/or while Bunny is
     # refreshing the object. Empty disables stale serving.
     cache_stale = optional(list(string), [])
