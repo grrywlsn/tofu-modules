@@ -48,46 +48,14 @@ output "cname_record_ids" {
   value       = { for k, r in bunnynet_dns_record.cname : k => r.id }
 }
 
-output "cdn_pullzone_ids" {
-  description = "Map of cdn = true record keys (a/… or cname/…) to Terraform-managed pull zone IDs"
-  value       = { for k, z in bunnynet_pullzone.cdn : k => z.id }
+output "txt_record_ids" {
+  description = "Map of TXT record keys to Bunny.net record IDs"
+  value       = { for k, r in bunnynet_dns_record.txt : k => r.id }
 }
 
-output "a_cdn_pullzone_ids" {
-  description = "Map of A record keys with cdn = true to their Terraform-managed pull zone IDs"
-  value = {
-    for k, r in bunnynet_dns_record.a : k => bunnynet_pullzone.cdn["a/${k}"].id
-    if r.type == "PullZone"
-  }
-}
-
-output "cname_cdn_pullzone_ids" {
-  description = "Map of CNAME record keys with cdn = true to their Terraform-managed pull zone IDs"
-  value = {
-    for k, r in bunnynet_dns_record.cname : k => bunnynet_pullzone.cdn["cname/${k}"].id
-    if r.type == "PullZone"
-  }
-}
-
-output "a_shield_ids" {
-  description = "Map of CDN A-record pull zones with Bunny Shield enabled to their Shield IDs"
-  value = {
-    for k, r in bunnynet_pullzone_shield.cdn : trimprefix(k, "a/") => r.id
-    if startswith(k, "a/")
-  }
-}
-
-output "cname_shield_ids" {
-  description = "Map of CDN CNAME-record pull zones with Bunny Shield enabled to their Shield IDs"
-  value = {
-    for k, r in bunnynet_pullzone_shield.cdn : trimprefix(k, "cname/") => r.id
-    if startswith(k, "cname/")
-  }
-}
-
-output "pull_zone_shield_ids" {
-  description = "Map of pull zone names with Bunny Shield enabled to their Shield IDs"
-  value       = { for k, r in bunnynet_pullzone_shield.pull_zone : k => r.id }
+output "mx_record_ids" {
+  description = "Map of MX record keys to Bunny.net record IDs"
+  value       = { for k, r in bunnynet_dns_record.mx : k => r.id }
 }
 
 output "pull_zone_ids" {
@@ -100,12 +68,17 @@ output "pull_zone_cdn_domains" {
   value       = { for k, z in bunnynet_pullzone.this : k => "${z.name}.${z.cdn_domain}" }
 }
 
-output "txt_record_ids" {
-  description = "Map of TXT record keys to Bunny.net record IDs"
-  value       = { for k, r in bunnynet_dns_record.txt : k => r.id }
+output "pull_zone_hostname_ids" {
+  description = "Map of attached FQDNs to pull zone hostname IDs"
+  value       = { for k, h in bunnynet_pullzone_hostname.this : k => h.id }
 }
 
-output "mx_record_ids" {
-  description = "Map of MX record keys to Bunny.net record IDs"
-  value       = { for k, r in bunnynet_dns_record.mx : k => r.id }
+output "pullzone_hostnames" {
+  description = "Every hostname this module attaches to a pull zone, mapped to the pull zone serving it"
+  value       = { for k, h in bunnynet_pullzone_hostname.this : h.name => bunnynet_pullzone.this[local.pull_zone_host_records[k].zone_key].name }
+}
+
+output "pull_zone_shield_ids" {
+  description = "Map of pull zone names with Bunny Shield enabled to their Shield IDs"
+  value       = { for k, r in bunnynet_pullzone_shield.this : k => r.id }
 }
