@@ -23,3 +23,14 @@ resource "scaleway_object_bucket_website_configuration" "main" {
     suffix = var.website_index_document
   }
 }
+
+resource "scaleway_object_bucket_server_side_encryption_configuration" "main" {
+  bucket = scaleway_object_bucket.main.name
+  region = var.region
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
