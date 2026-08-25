@@ -9,6 +9,13 @@ variable "region" {
   default     = "fr-par"
 }
 
+variable "project_id" {
+  description = "Scaleway project ID associated with the bucket; null uses the provider default"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "acl" {
   description = "Canned ACL to apply to the bucket; null leaves the provider default"
   type        = string
@@ -38,4 +45,11 @@ variable "abort_incomplete_multipart_upload_days" {
     condition     = var.abort_incomplete_multipart_upload_days == null || var.abort_incomplete_multipart_upload_days >= 1
     error_message = "abort_incomplete_multipart_upload_days must be null or at least 1."
   }
+}
+
+variable "bucket_policy" {
+  description = "JSON bucket policy document; null leaves the bucket without a managed policy"
+  type        = string
+  default     = null
+  nullable    = true
 }

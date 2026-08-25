@@ -17,3 +17,8 @@ output "server_side_encryption_id" {
   description = "Regional ID of the bucket server-side encryption configuration"
   value       = scaleway_object_bucket_server_side_encryption_configuration.main.id
 }
+
+output "bucket_policy_id" {
+  description = "Bucket policy ID when a policy is managed"
+  value       = var.bucket_policy == null ? null : scaleway_object_bucket_policy.main[0].id
+}
