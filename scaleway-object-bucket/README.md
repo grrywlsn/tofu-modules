@@ -1,6 +1,6 @@
 # scaleway-object-bucket
 
-Terraform module for a Scaleway Object Storage bucket with optional static-website configuration and incomplete multipart-upload cleanup.
+Terraform module for a Scaleway Object Storage bucket with AES-256 encryption always enabled, plus optional static-website configuration and incomplete multipart-upload cleanup.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -25,6 +25,7 @@ No modules.
 | Name | Type |
 | ---- | ---- |
 | [scaleway_object_bucket.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/object_bucket) | resource |
+| [scaleway_object_bucket_server_side_encryption_configuration.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/object_bucket_server_side_encryption_configuration) | resource |
 | [scaleway_object_bucket_website_configuration.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/object_bucket_website_configuration) | resource |
 
 ## Inputs
@@ -44,5 +45,6 @@ No modules.
 | ---- | ----------- |
 | <a name="output_bucket_id"></a> [bucket\_id](#output\_bucket\_id) | Object Storage bucket ID |
 | <a name="output_bucket_name"></a> [bucket\_name](#output\_bucket\_name) | Object Storage bucket name |
+| <a name="output_server_side_encryption_id"></a> [server\_side\_encryption\_id](#output\_server\_side\_encryption\_id) | Regional ID of the bucket server-side encryption configuration |
 | <a name="output_website_endpoint"></a> [website\_endpoint](#output\_website\_endpoint) | Static website endpoint when website configuration is enabled |
 <!-- END_TF_DOCS -->
