@@ -44,4 +44,11 @@ resource "scaleway_object_bucket_policy" "main" {
   region     = var.region
   project_id = var.project_id
   policy     = var.bucket_policy
+
+  # A policy denies every action it does not allow, including the bucket
+  # configuration reads these resources perform, so attach it last.
+  depends_on = [
+    scaleway_object_bucket_server_side_encryption_configuration.main,
+    scaleway_object_bucket_website_configuration.main,
+  ]
 }
