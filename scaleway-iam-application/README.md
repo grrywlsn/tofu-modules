@@ -8,7 +8,7 @@ Terraform module for a Scaleway IAM application, API key, and project-scoped per
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
-| <a name="requirement_scaleway"></a> [scaleway](#requirement\_scaleway) | 2.81.0 |
+| <a name="requirement_scaleway"></a> [scaleway](#requirement\_scaleway) | >= 2.37 |
 
 ## Providers
 
@@ -24,9 +24,9 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
-| [scaleway_iam_api_key.main](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/iam_api_key) | resource |
-| [scaleway_iam_application.main](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/iam_application) | resource |
-| [scaleway_iam_policy.main](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/iam_policy) | resource |
+| [scaleway_iam_api_key.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/iam_api_key) | resource |
+| [scaleway_iam_application.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/iam_application) | resource |
+| [scaleway_iam_policy.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/iam_policy) | resource |
 
 ## Inputs
 

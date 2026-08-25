@@ -8,7 +8,7 @@ Terraform module for a Scaleway Object Storage bucket with optional static-websi
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
-| <a name="requirement_scaleway"></a> [scaleway](#requirement\_scaleway) | 2.81.0 |
+| <a name="requirement_scaleway"></a> [scaleway](#requirement\_scaleway) | >= 2.37 |
 
 ## Providers
 
@@ -24,8 +24,8 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
-| [scaleway_object_bucket.main](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/object_bucket) | resource |
-| [scaleway_object_bucket_website_configuration.main](https://registry.terraform.io/providers/scaleway/scaleway/2.81.0/docs/resources/object_bucket_website_configuration) | resource |
+| [scaleway_object_bucket.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/object_bucket) | resource |
+| [scaleway_object_bucket_website_configuration.main](https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/object_bucket_website_configuration) | resource |
 
 ## Inputs
 
