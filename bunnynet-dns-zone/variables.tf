@@ -182,7 +182,7 @@ variable "pullzone_records" {
   validation {
     condition = alltrue([
       for z in var.pullzone_records :
-      z.storage_zone == null || contains(keys(var.storage_zones), z.storage_zone)
+      try(contains(keys(var.storage_zones), z.storage_zone), false) || z.storage_zone == null
     ])
     error_message = "pullzone_records storage_zone must match a key in storage_zones."
   }
@@ -198,9 +198,7 @@ variable "pullzone_records" {
   validation {
     condition = alltrue([
       for z in var.pullzone_records :
-      z.origin_url == null || (
-        z.origin_http ? startswith(z.origin_url, "http://") : startswith(z.origin_url, "https://")
-      )
+      z.origin_url == null || startswith(coalesce(z.origin_url, ""), z.origin_http ? "http://" : "https://")
     ])
     error_message = "pullzone_records origin_url must start with https:// unless origin_http = true (then http://)."
   }
