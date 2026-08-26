@@ -51,6 +51,34 @@ Bunny takes TLS SNI from the `origin_url` hostname, not the public hostname. An 
 
 Set `origin_http = true` and an `http://` origin for HTTP-only origins (for example an S3 website). Set `forward_host_header = false` if that origin expects its own hostname rather than the public `Host`.
 
+### Storage zone origin (static site / SPA)
+
+```hcl
+module "dns" {
+  source = "github.com/grrywlsn/tofu-modules.git//bunnynet-dns-zone?ref=bunnynet-dns-zone-v3.0.0"
+
+  domain = "example.com"
+
+  storage_zones = {
+    "example-app" = {
+      region               = "DE"
+      replication_regions  = ["SE"]
+      custom_404_file_path = "/index.html"
+      rewrite_404_to_200   = true
+    }
+  }
+
+  pullzone_records = {
+    "example-app" = {
+      hostnames    = [""]
+      storage_zone = "example-app"
+    }
+  }
+}
+```
+
+`storage_zone` must match a key in `storage_zones`. Use `/index.html` plus `rewrite_404_to_200` so client-side routes serve the SPA shell. Edge-tier zones must use `region = "DE"`. Replication regions cannot be removed later without recreating the zone.
+
 ### Shield off or custom
 
 ```hcl
@@ -143,13 +171,13 @@ Use those values when configuring DNSSEC at your registrar (console or API).
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
-| <a name="requirement_bunnynet"></a> [bunnynet](#requirement\_bunnynet) | 0.18.0 |
+| <a name="requirement_bunnynet"></a> [bunnynet](#requirement\_bunnynet) | 0.18.1 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_bunnynet"></a> [bunnynet](#provider\_bunnynet) | 0.18.0 |
+| <a name="provider_bunnynet"></a> [bunnynet](#provider\_bunnynet) | 0.18.1 |
 
 ## Modules
 
@@ -159,17 +187,18 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
-| [bunnynet_compute_script.pull_zone](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/compute_script) | resource |
-| [bunnynet_dns_record.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.mx](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.pull_zone_cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
-| [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_record) | resource |
-| [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/dns_zone) | resource |
-| [bunnynet_pullzone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone) | resource |
-| [bunnynet_pullzone_edgerule.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_edgerule) | resource |
-| [bunnynet_pullzone_hostname.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_hostname) | resource |
-| [bunnynet_pullzone_shield.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.0/docs/resources/pullzone_shield) | resource |
+| [bunnynet_compute_script.pull_zone](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/compute_script) | resource |
+| [bunnynet_dns_record.a](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.mx](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.pull_zone_cname](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_record) | resource |
+| [bunnynet_dns_record.txt](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_record) | resource |
+| [bunnynet_dns_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/dns_zone) | resource |
+| [bunnynet_pullzone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/pullzone) | resource |
+| [bunnynet_pullzone_edgerule.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/pullzone_edgerule) | resource |
+| [bunnynet_pullzone_hostname.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/pullzone_hostname) | resource |
+| [bunnynet_pullzone_shield.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/pullzone_shield) | resource |
+| [bunnynet_storage_zone.this](https://registry.terraform.io/providers/BunnyWay/bunnynet/0.18.1/docs/resources/storage_zone) | resource |
 
 ## Inputs
 
@@ -180,7 +209,8 @@ No modules.
 | <a name="input_dnssec_enabled"></a> [dnssec\_enabled](#input\_dnssec\_enabled) | Whether DNSSEC is enabled for the zone | `bool` | `true` | no |
 | <a name="input_domain"></a> [domain](#input\_domain) | Domain name for the Bunny.net DNS zone (e.g. example.com) | `string` | n/a | yes |
 | <a name="input_mx_records"></a> [mx\_records](#input\_mx\_records) | MX records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name     = string<br/>    value    = string<br/>    priority = number<br/>    ttl      = optional(number)<br/>  }))</pre> | `[]` | no |
-| <a name="input_pullzone_records"></a> [pullzone\_records](#input\_pullzone\_records) | Map of Bunny pull zones keyed by the desired pull-zone name. Each entry<br/>creates one pull zone shared by every hostname in hostnames.<br/>hostnames are relative to the zone: "" is the apex, "*" is a wildcard,<br/>"cdn" is cdn.<domain>, "*.cdn" is *.cdn.<domain>. For each hostname the<br/>module creates a CNAME to <name>.<cdn\_domain> and attaches it as a TLS<br/>hostname on the pull zone.<br/>Do not also list those names in a\_records or cname\_records.<br/>origin\_url must be https:// unless origin\_http = true (then http://).<br/>Bunny takes TLS SNI from the origin\_url hostname, not the public hostname.<br/>Omit shield for Basic Shield on; set shield = { enabled = false } to skip it. | <pre>map(object({<br/>    hostnames   = list(string)<br/>    origin_url  = string<br/>    origin_http = optional(bool, false)<br/>    middleware  = optional(string)<br/>    tls         = optional(bool, true)<br/>    force_ssl   = optional(bool, true)<br/>    # Send the client's Host header to the origin instead of the origin hostname.<br/>    forward_host_header           = optional(bool, true)<br/>    verify_ssl                    = optional(bool, true)<br/>    originshield_enabled          = optional(bool, false)<br/>    originshield_zone             = optional(string)<br/>    cache_expiration_time         = optional(number, 31919000)<br/>    cache_expiration_time_browser = optional(number)<br/>    cache_vary                    = optional(list(string), [])<br/>    cache_errors                  = optional(bool, false)<br/>    strip_cookies                 = optional(bool, false)<br/>    block_no_referer              = optional(bool, false)<br/>    # Bunny Smart Cache: only cache known-static extensions and MIME types.<br/>    smart_cache                = optional(bool, true)<br/>    cache_stale                = optional(list(string), [])<br/>    cache_chunked              = optional(bool, false)<br/>    use_background_update      = optional(bool)<br/>    request_coalescing_enabled = optional(bool, false)<br/>    request_coalescing_timeout = optional(number, 30)<br/>    ttl                        = optional(number, 86400)<br/>    # Omit for Basic Shield on. enabled defaults true when the object is set.<br/>    shield = optional(object({<br/>      enabled    = optional(bool, true)<br/>      tier       = optional(string, "Basic")<br/>      ddos_level = optional(string, "Medium")<br/>      waf        = optional(bool, true)<br/>      waf_mode   = optional(string, "Log")<br/>    }))<br/>    edge_rules = optional(list(object({<br/>      description = optional(string, "")<br/>      enabled     = optional(bool, true)<br/>      match_type  = optional(string, "MatchAny")<br/>      priority    = number<br/>      actions = list(object({<br/>        type       = string<br/>        parameter1 = optional(string)<br/>        parameter2 = optional(string)<br/>        parameter3 = optional(string)<br/>      }))<br/>      triggers = list(object({<br/>        type       = string<br/>        match_type = optional(string, "MatchAny")<br/>        patterns   = list(string)<br/>        parameter1 = optional(string)<br/>        parameter2 = optional(string)<br/>      }))<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_pullzone_records"></a> [pullzone\_records](#input\_pullzone\_records) | Map of Bunny pull zones keyed by the desired pull-zone name. Each entry<br/>creates one pull zone shared by every hostname in hostnames.<br/>hostnames are relative to the zone: "" is the apex, "*" is a wildcard,<br/>"cdn" is cdn.<domain>, "*.cdn" is *.cdn.<domain>. For each hostname the<br/>module creates a CNAME to <name>.<cdn\_domain> and attaches it as a TLS<br/>hostname on the pull zone.<br/>Do not also list those names in a\_records or cname\_records.<br/>Set exactly one of origin\_url or storage\_zone. origin\_url must be https://<br/>unless origin\_http = true (then http://). storage\_zone is a key from<br/>storage\_zones. Bunny takes TLS SNI from the origin\_url hostname, not the<br/>public hostname.<br/>Omit shield for Basic Shield on; set shield = { enabled = false } to skip it. | <pre>map(object({<br/>    hostnames    = list(string)<br/>    origin_url   = optional(string)<br/>    storage_zone = optional(string)<br/>    origin_http  = optional(bool, false)<br/>    middleware   = optional(string)<br/>    tls          = optional(bool, true)<br/>    force_ssl    = optional(bool, true)<br/>    # Send the client's Host header to the origin instead of the origin hostname.<br/>    forward_host_header           = optional(bool, true)<br/>    verify_ssl                    = optional(bool, true)<br/>    originshield_enabled          = optional(bool, false)<br/>    originshield_zone             = optional(string)<br/>    cache_expiration_time         = optional(number, 31919000)<br/>    cache_expiration_time_browser = optional(number)<br/>    cache_vary                    = optional(list(string), [])<br/>    cache_errors                  = optional(bool, false)<br/>    strip_cookies                 = optional(bool, false)<br/>    block_no_referer              = optional(bool, false)<br/>    # Bunny Smart Cache: only cache known-static extensions and MIME types.<br/>    smart_cache   = optional(bool, true)<br/>    cache_stale   = optional(list(string), [])<br/>    cache_chunked = optional(bool, false)<br/>    # Omit unless enabling; Bunny requires true (or unset) when cache_stale includes updating.<br/>    use_background_update      = optional(bool)<br/>    request_coalescing_enabled = optional(bool, false)<br/>    request_coalescing_timeout = optional(number, 30)<br/>    ttl                        = optional(number, 86400)<br/>    # Omit for Basic Shield on. enabled defaults true when the object is set.<br/>    shield = optional(object({<br/>      enabled    = optional(bool, true)<br/>      tier       = optional(string, "Basic")<br/>      ddos_level = optional(string, "Medium")<br/>      waf        = optional(bool, true)<br/>      waf_mode   = optional(string, "Log")<br/>    }))<br/>    edge_rules = optional(list(object({<br/>      description = optional(string, "")<br/>      enabled     = optional(bool, true)<br/>      match_type  = optional(string, "MatchAny")<br/>      priority    = number<br/>      actions = list(object({<br/>        type       = string<br/>        parameter1 = optional(string)<br/>        parameter2 = optional(string)<br/>        parameter3 = optional(string)<br/>      }))<br/>      triggers = list(object({<br/>        type       = string<br/>        match_type = optional(string, "MatchAny")<br/>        patterns   = list(string)<br/>        parameter1 = optional(string)<br/>        parameter2 = optional(string)<br/>      }))<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_storage_zones"></a> [storage\_zones](#input\_storage\_zones) | Map of Bunny Storage zones keyed by the storage-zone name. Each entry<br/>creates a storage zone the pull zones can use as origin. Edge tier<br/>requires region = "DE". Replication regions cannot be removed later<br/>without recreating the zone. | <pre>map(object({<br/>    region               = string<br/>    zone_tier            = optional(string, "Standard")<br/>    replication_regions  = optional(set(string), [])<br/>    custom_404_file_path = optional(string)<br/>    rewrite_404_to_200   = optional(bool, false)<br/>  }))</pre> | `{}` | no |
 | <a name="input_txt_records"></a> [txt\_records](#input\_txt\_records) | TXT records to create. Use name = "" for the apex. Empty list creates none. | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>    ttl   = optional(number)<br/>  }))</pre> | `[]` | no |
 
 ## Outputs
@@ -200,6 +230,10 @@ No modules.
 | <a name="output_pull_zone_ids"></a> [pull\_zone\_ids](#output\_pull\_zone\_ids) | Map of pull zone names to Bunny pull zone IDs |
 | <a name="output_pull_zone_shield_ids"></a> [pull\_zone\_shield\_ids](#output\_pull\_zone\_shield\_ids) | Map of pull zone names with Bunny Shield enabled to their Shield IDs |
 | <a name="output_pullzone_hostnames"></a> [pullzone\_hostnames](#output\_pullzone\_hostnames) | Every hostname this module attaches to a pull zone, mapped to the pull zone serving it |
+| <a name="output_storage_zone_hostnames"></a> [storage\_zone\_hostnames](#output\_storage\_zone\_hostnames) | Map of storage zone names to their storage hostnames |
+| <a name="output_storage_zone_ids"></a> [storage\_zone\_ids](#output\_storage\_zone\_ids) | Map of storage zone names to Bunny storage zone IDs |
+| <a name="output_storage_zone_passwords"></a> [storage\_zone\_passwords](#output\_storage\_zone\_passwords) | Map of storage zone names to write passwords for the Storage HTTP API |
+| <a name="output_storage_zone_passwords_readonly"></a> [storage\_zone\_passwords\_readonly](#output\_storage\_zone\_passwords\_readonly) | Map of storage zone names to read-only Storage HTTP API passwords |
 | <a name="output_txt_record_ids"></a> [txt\_record\_ids](#output\_txt\_record\_ids) | Map of TXT record keys to Bunny.net record IDs |
 | <a name="output_zone_id"></a> [zone\_id](#output\_zone\_id) | Bunny.net DNS zone ID |
 <!-- END_TF_DOCS -->

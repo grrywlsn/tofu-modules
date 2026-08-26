@@ -43,11 +43,12 @@ resource "bunnynet_pullzone" "this" {
   name = each.key
 
   origin {
-    type                = "OriginUrl"
-    url                 = each.value.origin_url
-    forward_host_header = each.value.forward_host_header
-    verify_ssl          = each.value.verify_ssl
-    follow_redirects    = true
+    type                = each.value.storage_zone != null ? "StorageZone" : "OriginUrl"
+    url                 = each.value.storage_zone != null ? null : each.value.origin_url
+    storagezone         = each.value.storage_zone != null ? bunnynet_storage_zone.this[each.value.storage_zone].id : null
+    forward_host_header = each.value.storage_zone != null ? null : each.value.forward_host_header
+    verify_ssl          = each.value.storage_zone != null ? null : each.value.verify_ssl
+    follow_redirects    = each.value.storage_zone != null ? null : true
     middleware_script   = try(bunnynet_compute_script.pull_zone[each.key].id, null)
   }
 
