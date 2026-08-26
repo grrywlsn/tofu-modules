@@ -79,6 +79,8 @@ module "dns" {
 
 `storage_zone` must match a key in `storage_zones`. Use `/index.html` plus `rewrite_404_to_200` so client-side routes serve the SPA shell. Edge-tier zones must use `region = "DE"`. Replication regions cannot be removed later without recreating the zone.
 
+Bunny always forwards the client `Host` to a storage origin, so `forward_host_header = false` is rejected for these entries. `origin_http`, `verify_ssl`, and `follow_redirects` apply only to URL origins.
+
 ### Shield off or custom
 
 ```hcl

@@ -90,6 +90,28 @@ run "storage_origin_missing_zone" {
   expect_failures = [var.pullzone_records]
 }
 
+run "storage_origin_rejects_host_header_override" {
+  command = plan
+
+  variables {
+    domain = "example.com"
+    storage_zones = {
+      site = {
+        region = "DE"
+      }
+    }
+    pullzone_records = {
+      site = {
+        hostnames           = [""]
+        storage_zone        = "site"
+        forward_host_header = false
+      }
+    }
+  }
+
+  expect_failures = [var.pullzone_records]
+}
+
 run "edge_storage_requires_de" {
   command = plan
 
