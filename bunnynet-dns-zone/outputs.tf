@@ -82,3 +82,25 @@ output "pull_zone_shield_ids" {
   description = "Map of pull zone names with Bunny Shield enabled to their Shield IDs"
   value       = { for k, r in bunnynet_pullzone_shield.this : k => r.id }
 }
+
+output "storage_zone_ids" {
+  description = "Map of storage zone names to Bunny storage zone IDs"
+  value       = { for k, z in bunnynet_storage_zone.this : k => z.id }
+}
+
+output "storage_zone_hostnames" {
+  description = "Map of storage zone names to their storage hostnames"
+  value       = { for k, z in bunnynet_storage_zone.this : k => z.hostname }
+}
+
+output "storage_zone_passwords" {
+  description = "Map of storage zone names to write passwords for the Storage HTTP API"
+  value       = { for k, z in bunnynet_storage_zone.this : k => z.password }
+  sensitive   = true
+}
+
+output "storage_zone_passwords_readonly" {
+  description = "Map of storage zone names to read-only Storage HTTP API passwords"
+  value       = { for k, z in bunnynet_storage_zone.this : k => z.password_readonly }
+  sensitive   = true
+}

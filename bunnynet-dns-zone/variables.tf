@@ -29,6 +29,44 @@ variable "cname_records" {
   default = []
 }
 
+variable "storage_zones" {
+  description = <<-EOT
+    Map of Bunny Storage zones keyed by the storage-zone name. Each entry
+    creates a storage zone the pull zones can use as origin. Edge tier
+    requires region = "DE". Replication regions cannot be removed later
+    without recreating the zone.
+  EOT
+  type = map(object({
+    region               = string
+    zone_tier            = optional(string, "Standard")
+    replication_regions  = optional(set(string), [])
+    custom_404_file_path = optional(string)
+    rewrite_404_to_200   = optional(bool, false)
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for name, _ in var.storage_zones : length(trimspace(name)) >= 4 && length(name) <= 64])
+    error_message = "storage_zones keys (storage zone names) must be between 4 and 64 characters."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.storage_zones :
+      contains(["Standard", "Edge"], z.zone_tier)
+    ])
+    error_message = "storage_zones zone_tier must be Standard or Edge."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.storage_zones :
+      length(trimspace(z.region)) > 0 && (z.zone_tier != "Edge" || z.region == "DE")
+    ])
+    error_message = "storage_zones region must be set, and Edge-tier zones must use region DE."
+  }
+}
+
 variable "pullzone_records" {
   description = <<-EOT
     Map of Bunny pull zones keyed by the desired pull-zone name. Each entry
@@ -38,17 +76,20 @@ variable "pullzone_records" {
     module creates a CNAME to <name>.<cdn_domain> and attaches it as a TLS
     hostname on the pull zone.
     Do not also list those names in a_records or cname_records.
-    origin_url must be https:// unless origin_http = true (then http://).
-    Bunny takes TLS SNI from the origin_url hostname, not the public hostname.
+    Set exactly one of origin_url or storage_zone. origin_url must be https://
+    unless origin_http = true (then http://). storage_zone is a key from
+    storage_zones. Bunny takes TLS SNI from the origin_url hostname, not the
+    public hostname.
     Omit shield for Basic Shield on; set shield = { enabled = false } to skip it.
   EOT
   type = map(object({
-    hostnames   = list(string)
-    origin_url  = string
-    origin_http = optional(bool, false)
-    middleware  = optional(string)
-    tls         = optional(bool, true)
-    force_ssl   = optional(bool, true)
+    hostnames    = list(string)
+    origin_url   = optional(string)
+    storage_zone = optional(string)
+    origin_http  = optional(bool, false)
+    middleware   = optional(string)
+    tls          = optional(bool, true)
+    force_ssl    = optional(bool, true)
     # Send the client's Host header to the origin instead of the origin hostname.
     forward_host_header           = optional(bool, true)
     verify_ssl                    = optional(bool, true)
@@ -133,7 +174,33 @@ variable "pullzone_records" {
   validation {
     condition = alltrue([
       for z in var.pullzone_records :
-      z.origin_http ? startswith(z.origin_url, "http://") : startswith(z.origin_url, "https://")
+      (z.origin_url != null && z.storage_zone == null) || (z.origin_url == null && z.storage_zone != null)
+    ])
+    error_message = "pullzone_records entries must set exactly one of origin_url or storage_zone."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pullzone_records :
+      z.storage_zone == null || contains(keys(var.storage_zones), z.storage_zone)
+    ])
+    error_message = "pullzone_records storage_zone must match a key in storage_zones."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pullzone_records :
+      !z.origin_http || z.origin_url != null
+    ])
+    error_message = "pullzone_records origin_http is only valid with origin_url."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pullzone_records :
+      z.origin_url == null || (
+        z.origin_http ? startswith(z.origin_url, "http://") : startswith(z.origin_url, "https://")
+      )
     ])
     error_message = "pullzone_records origin_url must start with https:// unless origin_http = true (then http://)."
   }

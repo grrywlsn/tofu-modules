@@ -52,6 +52,60 @@ run "a_record_collision" {
   expect_failures = [var.pullzone_records]
 }
 
+run "storage_and_url_origin_conflict" {
+  command = plan
+
+  variables {
+    domain = "example.com"
+    storage_zones = {
+      site = {
+        region = "DE"
+      }
+    }
+    pullzone_records = {
+      site = {
+        hostnames    = [""]
+        origin_url   = "https://origin.example.net"
+        storage_zone = "site"
+      }
+    }
+  }
+
+  expect_failures = [var.pullzone_records]
+}
+
+run "storage_origin_missing_zone" {
+  command = plan
+
+  variables {
+    domain = "example.com"
+    pullzone_records = {
+      app = {
+        hostnames    = [""]
+        storage_zone = "missing"
+      }
+    }
+  }
+
+  expect_failures = [var.pullzone_records]
+}
+
+run "edge_storage_requires_de" {
+  command = plan
+
+  variables {
+    domain = "example.com"
+    storage_zones = {
+      site = {
+        region    = "UK"
+        zone_tier = "Edge"
+      }
+    }
+  }
+
+  expect_failures = [var.storage_zones]
+}
+
 run "http_origin_requires_flag" {
   command = plan
 
