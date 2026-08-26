@@ -198,6 +198,14 @@ variable "pullzone_records" {
   validation {
     condition = alltrue([
       for z in var.pullzone_records :
+      z.storage_zone == null || z.forward_host_header
+    ])
+    error_message = "pullzone_records with storage_zone cannot set forward_host_header = false; Bunny always forwards Host to storage origins."
+  }
+
+  validation {
+    condition = alltrue([
+      for z in var.pullzone_records :
       z.origin_url == null || startswith(coalesce(z.origin_url, ""), z.origin_http ? "http://" : "https://")
     ])
     error_message = "pullzone_records origin_url must start with https:// unless origin_http = true (then http://)."
