@@ -177,12 +177,12 @@ jobs:
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v2
         with:
-          tofu_version: 1.9.0
+          tofu_version: 1.12.6
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v6
         with:
-          tflint_version: v0.55.1
+          tflint_version: v0.64.0
 
       - name: Install terraform-docs
         run: |
