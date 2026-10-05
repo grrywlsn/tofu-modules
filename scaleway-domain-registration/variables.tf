@@ -1,4 +1,4 @@
-variable "domain" {
+variable "domain_name" {
   description = "Domain name to register or manage (e.g. example.com). One domain per module instance."
   type        = string
 }

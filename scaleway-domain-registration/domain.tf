@@ -4,7 +4,7 @@ locals {
 }
 
 resource "scaleway_domain_registration" "this" {
-  domain_names      = [var.domain]
+  domain_names      = [var.domain_name]
   duration_in_years = var.duration_in_years
   auto_renew        = var.auto_renew
   # Provider cannot set a custom DS record (ds_record is computed-only), so
