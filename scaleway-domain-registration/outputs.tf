@@ -3,9 +3,9 @@ output "id" {
   value       = scaleway_domain_registration.this.id
 }
 
-output "domain" {
+output "domain_name" {
   description = "Managed domain name."
-  value       = var.domain
+  value       = var.domain_name
 }
 
 output "task_id" {
