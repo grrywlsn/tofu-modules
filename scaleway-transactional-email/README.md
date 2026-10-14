@@ -13,12 +13,17 @@ webhook_event_types = [
 ]
 ```
 
-The topic ARN is `sns_topic_arn`. The same apply writes a Secrets Manager secret named `tem--<topic>` (`sns_credentials_secret_id`) whose version is JSON:
+The topic ARN is `sns_topic_arn`. The same apply creates one queue, subscribes the topic to it, and writes a Secrets Manager secret named `tem--<topic>` (`sns_credentials_secret_id`) whose version is JSON:
 
 ```json
-{ "access_key": "...", "secret_key": "...", "topic_arn": "..." }
+{
+  "topic_arn": "...",
+  "queue_url": "...",
+  "sqs_access_key": "...",
+  "sqs_secret_key": "..."
+}
 ```
 
-Those fields are what `scaleway_mnq_sns_topic_subscription` needs. Subscribe that topic to the HTTPS endpoint that should receive the events. nvite.me verifies the SNS signature on `POST /v1/webhooks/email/bounce` and confirms `SubscriptionConfirmation` requests whose URL is on `scaleway.com`.
+The queue hides a received message from other consumers for 60 seconds. A message that is received 5 times without being deleted moves to a dead-letter queue. Pods use the receive-only keys to pull. The SNS keys that create the topic stay in Terraform state.
 
 SNS is one activation per project and region. A second stack that also creates `scaleway_mnq_sns` for the same project should import the existing activation instead of creating another.

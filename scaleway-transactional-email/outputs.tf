@@ -27,6 +27,11 @@ output "sns_topic_arn" {
 }
 
 output "sns_credentials_secret_id" {
-  description = "Secrets Manager secret ID for the SNS access_key, secret_key, and topic_arn. Null when webhook_event_types is empty."
+  description = "Secrets Manager secret ID. The version holds topic_arn, queue_url, sqs_access_key, and sqs_secret_key. Null when webhook_event_types is empty."
   value       = one(scaleway_secret.webhook[*].id)
+}
+
+output "sqs_queue_url" {
+  description = "URL of the queue subscribed to the topic. Null when webhook_event_types is empty."
+  value       = one(scaleway_mnq_sqs_queue.webhook[*].url)
 }
