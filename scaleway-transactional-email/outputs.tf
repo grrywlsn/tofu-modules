@@ -16,12 +16,12 @@ output "email_smtp_port_alternative" {
   value = scaleway_tem_domain.main.smtp_port_alternative
 }
 
-output "webhook_ids" {
-  description = "Map of webhook name to Scaleway TEM webhook ID. Empty when webhooks is empty."
-  value       = { for name, hook in scaleway_tem_webhook.this : name => hook.id }
+output "webhook_id" {
+  description = "Scaleway TEM webhook ID. Null when webhook_event_types is empty."
+  value       = one(scaleway_tem_webhook.webhook[*].id)
 }
 
-output "sns_topic_arns" {
-  description = "Map of webhook name to the SNS topic ARN created for it. Empty when webhooks is empty."
-  value       = { for name, topic in scaleway_mnq_sns_topic.webhooks : name => topic.arn }
+output "sns_topic_arn" {
+  description = "ARN of the single SNS topic for this domain's webhook. Null when webhook_event_types is empty."
+  value       = one(scaleway_mnq_sns_topic.webhook[*].arn)
 }
