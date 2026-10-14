@@ -15,3 +15,8 @@ output "email_smtp_port" {
 output "email_smtp_port_alternative" {
   value = scaleway_tem_domain.main.smtp_port_alternative
 }
+
+output "webhook_ids" {
+  description = "Map of webhook name to Scaleway TEM webhook ID. Empty when webhooks is empty."
+  value       = { for name, hook in scaleway_tem_webhook.this : name => hook.id }
+}
