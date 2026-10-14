@@ -13,6 +13,12 @@ webhook_event_types = [
 ]
 ```
 
-The topic ARN is `sns_topic_arn`. Subscribe that topic to the HTTPS endpoint that should receive the events. nvite.me verifies the SNS signature on `POST /v1/webhooks/email/bounce` and confirms `SubscriptionConfirmation` requests whose URL is on `scaleway.com`.
+The topic ARN is `sns_topic_arn`. The same apply writes a Secrets Manager secret named `tem--<topic>` (`sns_credentials_secret_id`) whose version is JSON:
+
+```json
+{ "access_key": "...", "secret_key": "...", "topic_arn": "..." }
+```
+
+Those fields are what `scaleway_mnq_sns_topic_subscription` needs. Subscribe that topic to the HTTPS endpoint that should receive the events. nvite.me verifies the SNS signature on `POST /v1/webhooks/email/bounce` and confirms `SubscriptionConfirmation` requests whose URL is on `scaleway.com`.
 
 SNS is one activation per project and region. A second stack that also creates `scaleway_mnq_sns` for the same project should import the existing activation instead of creating another.

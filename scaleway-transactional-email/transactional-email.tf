@@ -41,3 +41,20 @@ resource "scaleway_tem_webhook" "webhook" {
   event_types = var.webhook_event_types
   sns_arn     = scaleway_mnq_sns_topic.webhook[0].arn
 }
+
+resource "scaleway_secret" "webhook" {
+  count = local.webhooks_enabled ? 1 : 0
+
+  name = "tem--${local.sns_topic_name}"
+}
+
+resource "scaleway_secret_version" "webhook" {
+  count = local.webhooks_enabled ? 1 : 0
+
+  secret_id = scaleway_secret.webhook[0].id
+  data = jsonencode({
+    access_key = scaleway_mnq_sns_credentials.webhook[0].access_key
+    secret_key = scaleway_mnq_sns_credentials.webhook[0].secret_key
+    topic_arn  = scaleway_mnq_sns_topic.webhook[0].arn
+  })
+}
