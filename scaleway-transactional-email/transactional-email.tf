@@ -89,8 +89,10 @@ resource "scaleway_mnq_sqs_queue" "webhook" {
   secret_key                 = scaleway_mnq_sqs_credentials.manage[0].secret_key
   visibility_timeout_seconds = 60
 
+  # The API stores this as region/project/name. Setting the ARN makes every
+  # plan rewrite it back to that id.
   dead_letter_queue {
-    id                = scaleway_mnq_sqs_queue.dead_letter[0].arn
+    id                = scaleway_mnq_sqs_queue.dead_letter[0].id
     max_receive_count = 5
   }
 }
