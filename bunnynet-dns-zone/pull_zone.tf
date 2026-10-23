@@ -46,9 +46,9 @@ resource "bunnynet_pullzone" "this" {
     type        = each.value.storage_zone != null ? "StorageZone" : "OriginUrl"
     url         = each.value.storage_zone != null ? null : each.value.origin_url
     storagezone = each.value.storage_zone != null ? bunnynet_storage_zone.this[each.value.storage_zone].id : null
-    # Bunny always forwards the Host header to a storage origin and returns true
-    # regardless of what is sent, so an unset value would fail as inconsistent.
-    forward_host_header = each.value.storage_zone != null ? true : each.value.forward_host_header
+    # Bunny's API reports AddHostHeader=false for a storage origin. Sending true
+    # makes the provider return an inconsistent plan after apply.
+    forward_host_header = each.value.storage_zone != null ? false : each.value.forward_host_header
     verify_ssl          = each.value.storage_zone != null ? null : each.value.verify_ssl
     follow_redirects    = each.value.storage_zone != null ? null : true
     middleware_script   = try(bunnynet_compute_script.pull_zone[each.key].id, null)

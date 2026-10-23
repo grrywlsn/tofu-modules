@@ -90,7 +90,7 @@ run "storage_origin_missing_zone" {
   expect_failures = [var.pullzone_records]
 }
 
-run "storage_origin_rejects_host_header_override" {
+run "storage_origin_ignores_host_header_override" {
   command = plan
 
   variables {
@@ -108,8 +108,6 @@ run "storage_origin_rejects_host_header_override" {
       }
     }
   }
-
-  expect_failures = [var.pullzone_records]
 }
 
 run "edge_storage_requires_de" {
