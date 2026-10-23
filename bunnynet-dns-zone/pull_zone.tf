@@ -46,9 +46,9 @@ resource "bunnynet_pullzone" "this" {
     type        = each.value.storage_zone != null ? "StorageZone" : "OriginUrl"
     url         = each.value.storage_zone != null ? null : each.value.origin_url
     storagezone = each.value.storage_zone != null ? bunnynet_storage_zone.this[each.value.storage_zone].id : null
-    # Bunny's API reports AddHostHeader=false for a storage origin. Sending true
-    # makes the provider return an inconsistent plan after apply.
-    forward_host_header = each.value.storage_zone != null ? false : each.value.forward_host_header
+    # A new storage pull zone reports this as false. An existing zone that Bunny
+    # already stored as true keeps that value, so callers set it per zone.
+    forward_host_header = each.value.forward_host_header
     verify_ssl          = each.value.storage_zone != null ? null : each.value.verify_ssl
     follow_redirects    = each.value.storage_zone != null ? null : true
     middleware_script   = try(bunnynet_compute_script.pull_zone[each.key].id, null)
