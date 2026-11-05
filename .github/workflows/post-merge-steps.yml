@@ -80,4 +80,4 @@ jobs:
         run: |
           source ../scripts/resolve-pr-release-message.sh "${{ github.sha }}"
           bash ../scripts/prepare-semantic-release.sh
-          npx semantic-release --tag-format="${{ matrix.module }}-v\${version}"
+          bash ../scripts/run-semantic-release.sh "${{ matrix.module }}"
