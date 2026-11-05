@@ -18,6 +18,19 @@
       "labels": ["dependencies"]
     },
     {
+      "description": "Wait for the provider binary to be published, then automerge once required checks pass",
+      "matchManagers": ["terraform"],
+      "minimumReleaseAge": "6 hours",
+      "prCreation": "not-pending",
+      "internalChecksFilter": "strict",
+      "internalChecksAsSuccess": true,
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "automergeStrategy": "rebase",
+      "rebaseWhen": "behind-base-branch"
+    },
+    {
       "description": "Patch provider bumps → fix(scope) for patch module releases",
       "matchManagers": ["terraform"],
       "matchUpdateTypes": ["patch"],
