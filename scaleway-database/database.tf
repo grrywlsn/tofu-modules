@@ -15,8 +15,7 @@ resource "random_password" "db_password" {
 
 locals {
   # Use ternaries (not coalesce) so we never index empty count-0 random resources.
-  # Prefix with "uuid-" so the name starts with a letter and matches the
-  # mastodon-infra username format. Gate the index on the same condition as the UUID's count.
+  # Prefix with "uuid-" so the name starts with a letter, matching Scaleway requirements.
   generated_database_user_name = var.create_user && var.database_user_name == null ? "uuid-${random_uuid.db_username[0].result}" : null
 
   database_user_name = var.create_user ? (
