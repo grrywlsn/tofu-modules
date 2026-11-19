@@ -27,7 +27,7 @@ variable "create_privilege" {
 }
 
 variable "database_user_name" {
-  description = "Database username for the scaleway_rdb_user.db_user resource. Must respect the Scaleway RDB user name constraint: first character must be a letter (a-zA-Z), only a-zA-Z0-9_$- characters are accepted, max 63 characters. When null and create_user is true, a random name starting with a letter is generated from a UUID (hyphens stripped)"
+  description = "Database username for the scaleway_rdb_user.db_user resource. Must respect the Scaleway RDB user name constraint: first character must be a letter (a-zA-Z), only a-zA-Z0-9_$- characters are accepted, max 63 characters. When null and create_user is true, a name of the form uuid-<uuid> is generated."
   type        = string
   default     = null
   nullable    = true
