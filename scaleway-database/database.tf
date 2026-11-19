@@ -15,13 +15,11 @@ resource "random_password" "db_password" {
 
 locals {
   # Use ternaries (not coalesce) so we never index empty count-0 random resources.
-  # Format the generated fallback up front: prefix with a letter and strip hyphens so
-  # the name always satisfies the scaleway_rdb_user name constraint (first character
-  # must be a letter, only a-zA-Z0-9_$- accepted).
-  generated_database_user_name = "u${replace(random_uuid.db_username[0].result, "-", "")}"
-
+  # The generated fallback is prefixed with a letter and has hyphens stripped so it
+  # satisfies the scaleway_rdb_user name constraint. Keep that expression in the
+  # branch that is only taken when random_uuid.db_username has count 1.
   database_user_name = var.create_user ? (
-    var.database_user_name != null ? var.database_user_name : local.generated_database_user_name
+    var.database_user_name != null ? var.database_user_name : "u${replace(random_uuid.db_username[0].result, "-", "")}"
   ) : var.database_user_name
   database_user_password = var.create_user ? (
     var.database_user_password != null ? var.database_user_password : random_password.db_password[0].result
