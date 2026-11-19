@@ -27,10 +27,15 @@ variable "create_privilege" {
 }
 
 variable "database_user_name" {
-  description = "Database username. When null and create_user is true, a random UUID is generated without a uuid- prefix"
+  description = "Database username for the scaleway_rdb_user.db_user resource. Must respect the Scaleway RDB user name constraint: first character must be a letter (a-zA-Z), only a-zA-Z0-9_$- characters are accepted, max 63 characters. When null and create_user is true, a random name starting with a letter is generated from a UUID (hyphens stripped)"
   type        = string
   default     = null
   nullable    = true
+
+  validation {
+    condition     = var.database_user_name == null || can(regex("^[a-zA-Z][a-zA-Z0-9_$-]{0,62}$", var.database_user_name))
+    error_message = "database_user_name is invalid for scaleway_rdb_user.db_user: it must start with a letter (a-zA-Z) and contain only letters, digits, '_', '$' or '-' (1-63 characters)."
+  }
 
   validation {
     condition     = !var.create_privilege || var.create_user || var.database_user_name != null
