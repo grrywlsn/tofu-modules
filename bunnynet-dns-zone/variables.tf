@@ -307,3 +307,13 @@ variable "mx_records" {
     error_message = "mx_records priority must be greater than or equal to 0."
   }
 }
+
+variable "ns_records" {
+  description = "NS records to create. Use name = \"\" for the apex. Empty list creates none. Use to delegate a subdomain (e.g. name = \"alpha\") to other nameservers."
+  type = list(object({
+    name  = string
+    value = string
+    ttl   = optional(number)
+  }))
+  default = []
+}
