@@ -96,7 +96,10 @@ variable "pullzone_records" {
     originshield_enabled          = optional(bool, false)
     originshield_zone             = optional(string)
     cache_expiration_time         = optional(number, 31919000)
-    cache_expiration_time_browser = optional(number)
+    # Default to the same long TTL as the origin cache: the Bunny API returns
+    # -1 for an unset browser cache time, which fails new pull zones with
+    # "inconsistent result after apply".
+    cache_expiration_time_browser = optional(number, 31919000)
     cache_vary                    = optional(list(string), [])
     cache_errors                  = optional(bool, false)
     strip_cookies                 = optional(bool, false)
