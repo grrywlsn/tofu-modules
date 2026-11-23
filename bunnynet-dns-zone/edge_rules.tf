@@ -2,9 +2,52 @@ locals {
   # Bunny rejects more than 5 patterns in a single edge-rule condition.
   edge_rule_max_patterns = 5
 
+  # ACME HTTP-01 challenge paths must never be served from the edge cache: a
+  # pinned stale/wrong response for a challenge token fails LE validation for
+  # up to the cache TTL. Match both the bare path and anything under it.
+  acme_challenge_patterns = [
+    "*/.well-known/acme-challenge",
+    "*/.well-known/acme-challenge/*",
+  ]
+
+  # Module-default ACME bypass rule per pull zone. Injected unless the caller
+  # set acme_challenge_cache_bypass = false or already has a Url rule matching
+  # an acme-challenge pattern. The priority sits just below the lowest
+  # caller-supplied rule so the bypass always evaluates before any cache rule.
+  acme_bypass_rules = {
+    for record_key, zone in var.pullzone_records : "${record_key}/acme/0" => {
+      key         = "${record_key}/acme/0"
+      record_key  = record_key
+      description = "Bypass edge cache for ACME HTTP-01 challenges (module default)"
+      enabled     = true
+      match_type  = "MatchAny"
+      priority    = max(min(concat([for r in zone.edge_rules : r.priority], [1000])...) - 1, 1)
+      actions = [{
+        type       = "OverrideCacheTime"
+        parameter1 = "0"
+        parameter2 = null
+        parameter3 = null
+      }]
+      triggers = [{
+        type       = "Url"
+        match_type = "MatchAny"
+        patterns   = local.acme_challenge_patterns
+        parameter1 = null
+        parameter2 = null
+      }]
+    }
+    if coalesce(zone.acme_challenge_cache_bypass, true) && !anytrue([
+      for rule in zone.edge_rules : anytrue([
+        for t in rule.triggers : t.type == "Url" && anytrue([
+          for p in t.patterns : can(regex("acme-challenge", p))
+        ])
+      ])
+    ])
+  }
+
   # Expand caller-provided rules: single-trigger rules with >5 patterns are split
   # into consecutive priorities so they stay within Bunny's limit.
-  edge_rules = {
+  caller_edge_rules = {
     for item in flatten([
       for record_key, zone in var.pullzone_records : [
         for rule_idx, rule in zone.edge_rules : (
@@ -41,6 +84,10 @@ locals {
       ]
     ]) : item.key => item
   }
+
+  # Caller rules plus the module-default ACME bypass rules. The "acme" key
+  # segment never collides with caller keys ("<zone>/<rule_idx>/<chunk_idx>").
+  edge_rules = merge(local.caller_edge_rules, local.acme_bypass_rules)
 }
 
 resource "bunnynet_pullzone_edgerule" "this" {
