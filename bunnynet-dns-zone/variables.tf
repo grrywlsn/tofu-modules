@@ -81,6 +81,9 @@ variable "pullzone_records" {
     storage_zones. Bunny takes TLS SNI from the origin_url hostname, not the
     public hostname.
     Omit shield for Basic Shield on; set shield = { enabled = false } to skip it.
+    By default every pull zone gets a module-injected edge rule that matches
+    ACME HTTP-01 challenge paths and disables edge caching for them (see
+    acme_challenge_cache_bypass).
   EOT
   type = map(object({
     hostnames    = list(string)
@@ -140,6 +143,15 @@ variable "pullzone_records" {
         parameter2 = optional(string)
       }))
     })), [])
+    # When true (default), the module injects an edge rule matching the ACME
+    # HTTP-01 challenge paths (*/.well-known/acme-challenge and
+    # */.well-known/acme-challenge/*) with action OverrideCacheTime 0, so
+    # challenge responses are never stored at the edge and are always passed
+    # through to the origin. The rule is placed at a priority just below the
+    # lowest caller-supplied edge rule, so it always evaluates before any
+    # catch-all cache rule. The injection is skipped when a caller rule
+    # already matches an acme-challenge pattern. Set false to disable.
+    acme_challenge_cache_bypass = optional(bool, true)
   }))
   default = {}
 
