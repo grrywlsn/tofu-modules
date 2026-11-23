@@ -91,12 +91,15 @@ variable "pullzone_records" {
     tls          = optional(bool, true)
     force_ssl    = optional(bool, true)
     # Send the client's Host header to the origin instead of the origin hostname.
-    forward_host_header           = optional(bool, true)
-    verify_ssl                    = optional(bool, true)
-    originshield_enabled          = optional(bool, false)
-    originshield_zone             = optional(string)
-    cache_expiration_time         = optional(number, 31919000)
-    cache_expiration_time_browser = optional(number)
+    forward_host_header   = optional(bool, true)
+    verify_ssl            = optional(bool, true)
+    originshield_enabled  = optional(bool, false)
+    originshield_zone     = optional(string)
+    cache_expiration_time = optional(number, 31919000)
+    # Default to the same long TTL as the origin cache: the Bunny API returns
+    # -1 for an unset browser cache time, which fails new pull zones with
+    # "inconsistent result after apply".
+    cache_expiration_time_browser = optional(number, 31919000)
     cache_vary                    = optional(list(string), [])
     cache_errors                  = optional(bool, false)
     strip_cookies                 = optional(bool, false)
