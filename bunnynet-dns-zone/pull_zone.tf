@@ -51,6 +51,7 @@ resource "bunnynet_pullzone" "this" {
     # after apply"), true for OriginUrl origins. An EXISTING storage zone that
     # Bunny already stored as true keeps that value and rejects false, so set
     # forward_host_header explicitly to match what Bunny has stored for it.
+    # Upstream provider issue: https://github.com/BunnyWay/terraform-provider-bunnynet/issues/106
     forward_host_header = coalesce(each.value.forward_host_header, each.value.storage_zone != null ? false : true)
     verify_ssl          = each.value.storage_zone != null ? null : each.value.verify_ssl
     follow_redirects    = each.value.storage_zone != null ? null : true
