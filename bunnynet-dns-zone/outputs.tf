@@ -104,3 +104,22 @@ output "storage_zone_passwords_readonly" {
   value       = { for k, z in bunnynet_storage_zone.this : k => z.password_readonly }
   sensitive   = true
 }
+
+output "pullzone_edge_rules" {
+  description = <<-EOT
+    All edge rules managed for each pull zone, keyed "<zone>/<rule_idx>/<chunk_idx>"
+    plus the module-default ACME bypass rule at "<zone>/acme/0" (unless disabled
+    via acme_challenge_cache_bypass or already covered by a caller rule).
+  EOT
+  value = {
+    for k, r in local.edge_rules : k => {
+      pullzone    = r.record_key
+      description = r.description
+      enabled     = r.enabled
+      match_type  = r.match_type
+      priority    = r.priority
+      actions     = r.actions
+      triggers    = r.triggers
+    }
+  }
+}
