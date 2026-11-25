@@ -94,7 +94,11 @@ variable "pullzone_records" {
     tls          = optional(bool, true)
     force_ssl    = optional(bool, true)
     # Send the client's Host header to the origin instead of the origin hostname.
-    forward_host_header   = optional(bool, true)
+    # Null default: false for storage-zone origins, true for URL origins. Set it
+    # explicitly when Bunny already stored a different value for an existing
+    # pull zone (it keeps the stored value for storage origins, and the provider
+    # fails the apply with "inconsistent result" on a mismatch).
+    forward_host_header   = optional(bool)
     verify_ssl            = optional(bool, true)
     originshield_enabled  = optional(bool, false)
     originshield_zone     = optional(string)
