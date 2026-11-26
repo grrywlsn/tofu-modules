@@ -35,12 +35,6 @@ resource "scaleway_rdb_instance" "main" {
 
   settings = var.database_settings
 
-  lifecycle {
-    # user_name is ForceNew and set only at provisioning; the actual admin
-    # role can differ after a platform-side migration, which must not force
-    # replacement of the instance.
-    ignore_changes = [user_name]
-  }
 }
 
 resource "scaleway_rdb_acl" "main" {
