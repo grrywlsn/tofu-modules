@@ -7,7 +7,7 @@ variable "database_allowed_ips" {
 variable "database_engine" {
   description = "Database engine type"
   type        = string
-  default     = "PostgreSQL-15"
+  default     = "PostgreSQL-17"
 }
 
 variable "database_highly_available" {
