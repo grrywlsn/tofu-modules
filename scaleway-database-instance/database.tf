@@ -34,7 +34,6 @@ resource "scaleway_rdb_instance" "main" {
   }
 
   settings = var.database_settings
-
 }
 
 resource "scaleway_rdb_acl" "main" {
